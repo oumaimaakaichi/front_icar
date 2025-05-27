@@ -302,48 +302,71 @@ class _UserHomePageState extends State<ClientHomePage> {
       ),
       body: SafeArea(
         child: Container(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-
-                const SizedBox(height: 20),
-                const Text(
-                  "Que souhaitez-vous faire ?",
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey,
-                  ),
-                ),
-                const SizedBox(height: 30),
-                _buildPanneCard(
-                  context,
-                  title: "Panne Connue",
-                  description: "Voir les solutions aux problèmes fréquents",
-                  icon: Icons.check_circle_outline,
-                  color: Colors.lightBlue,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const Voiture()),
-                    );
-                  },
-                ),
-                const SizedBox(height: 20),
-                _buildPanneCard(
-                  context,
-                  title: "Panne Non Connue",
-                  description: "Créer un ticket d'assistance personnalisé",
-                  icon: Icons.report_problem_outlined,
-                  color: Colors.blueGrey,
-                  onTap: () {
-
-                  },
-                ),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Theme.of(context).brightness == Brightness.dark
+                    ? Colors.grey[900]!
+                    : Colors.grey[50]!,
+                Theme.of(context).brightness == Brightness.dark
+                    ? Colors.grey[850]!
+                    : Colors.white,
               ],
             ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Que souhaitez-vous faire ?",
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.white
+                      : Colors.grey[800],
+                  letterSpacing: -0.5,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                "Choisissez une option ci-dessous",
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.grey[400]
+                      : Colors.grey[600],
+                ),
+              ),
+              const SizedBox(height: 30),
+              _buildPanneCard(
+                context,
+                title: "Panne Connue",
+                description: "Voir les solutions aux problèmes fréquents",
+                icon: Icons.auto_fix_high_rounded,
+                color: Colors.blueAccent,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const Voiture()),
+                  );
+                },
+              ),
+              const SizedBox(height: 20),
+              _buildPanneCard(
+                context,
+                title: "Panne Inconnue",
+                description: "Créer un ticket d'assistance personnalisé",
+                icon: Icons.support_agent_rounded,
+                color: Colors.deepOrangeAccent,
+                onTap: () {
+                  // Handle tap
+                },
+              ),
+            ],
           ),
         ),
       ),
@@ -358,46 +381,91 @@ class _UserHomePageState extends State<ClientHomePage> {
         required Color color,
         required VoidCallback onTap,
       }) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDarkMode ? Colors.white : Colors.grey[800];
+    final cardColor = isDarkMode ? Colors.grey[850]! : Colors.white;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(20),
+        margin: const EdgeInsets.symmetric(vertical: 8),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(15),
-          border: Border.all(color: color.withOpacity(0.3), width: 1),
+          color: cardColor,
+          borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
-              blurRadius: 10,
-              spreadRadius: 2,
-              offset: const Offset(0, 3),
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 15,
+              spreadRadius: 1,
+              offset: const Offset(0, 5),
             ),
           ],
         ),
-        child: Row(
+        child: Stack(
           children: [
-            Icon(icon, size: 40, color: color),
-            const SizedBox(width: 15),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            Positioned(
+              right: 0,
+              top: 0,
+              child: Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  borderRadius: const BorderRadius.only(
+                    topRight: Radius.circular(20),
+                    bottomLeft: Radius.circular(40),
+                  ),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Row(
                 children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                  Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      color: color.withOpacity(0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      icon,
+                      size: 30,
                       color: color,
                     ),
                   ),
-                  const SizedBox(height: 5),
-                  Text(
-                    description,
-                    style: TextStyle(
-                      color: Colors.grey[600],
+                  const SizedBox(width: 20),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: textColor,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          description,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                            height: 1.4,
+                          ),
+                        ),
+                      ],
                     ),
+                  ),
+                  const SizedBox(width: 10),
+                  Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 18,
+                    color: color,
                   ),
                 ],
               ),

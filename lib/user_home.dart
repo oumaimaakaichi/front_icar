@@ -1,3 +1,4 @@
+import 'package:car_mobile/TechnicienDemandesPage.dart';
 import 'package:car_mobile/login.dart';
 import 'package:car_mobile/settings_page.dart';
 import 'package:car_mobile/ticketAssistance.dart';
@@ -25,8 +26,6 @@ class _UserHomePageState extends State<UserHomePage> {
 
   Future<void> _loadUserData() async {
     final userDataJson = await _storage.read(key: 'user_data');
-    print("bbbbbbbbbbbb $userDataJson");
-
     if (userDataJson != null) {
       final userData = jsonDecode(userDataJson);
       if (!mounted) return;
@@ -78,20 +77,103 @@ class _UserHomePageState extends State<UserHomePage> {
     );
   }
 
+  Widget _buildDemandCard({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: onTap,
+        splashColor: color.withOpacity(0.2),
+        highlightColor: color.withOpacity(0.1),
+        child: Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                color.withOpacity(0.9),
+                color.withOpacity(0.6),
+              ],
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: color.withOpacity(0.3),
+                blurRadius: 10,
+                spreadRadius: 2,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  icon,
+                  size: 30,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                title,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              if (subtitle.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.9),
+                    fontSize: 14,
+                    height: 1.4,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'Home',
+          'Accueil',
           style: TextStyle(
             color: Colors.white,
-            fontFamily: 'Roboto', // Remplace par ta police si elle est bien ajoutée dans pubspec.yaml
+            fontFamily: 'Roboto',
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
         ),
-
         backgroundColor: Colors.blueGrey,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
@@ -112,14 +194,6 @@ class _UserHomePageState extends State<UserHomePage> {
                 borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(20),
                   bottomRight: Radius.circular(20),
-                ),
-                image: const DecorationImage(
-                  image: AssetImage('assets/images/background_pattern.png'),
-                  fit: BoxFit.cover,
-                  colorFilter: ColorFilter.mode(
-                    Colors.blueGrey,
-                    BlendMode.dstATop,
-                  ),
                 ),
               ),
               child: Center(
@@ -187,25 +261,27 @@ class _UserHomePageState extends State<UserHomePage> {
                   _buildDrawerTile(
                     context,
                     icon: Icons.dashboard,
-                    title: 'Home',
+                    title: 'Accueil',
                     onTap: () => Navigator.pop(context),
                   ),
                   _buildDrawerTile(
                     context,
                     icon: Icons.analytics,
                     title: 'Tickets Assistance',
-                      onTap: () {
-            Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) =>  TechnicienTicketsPage()),
-            );
-            },
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => TechnicienTicketsPage()),
+                      );
+                    },
                   ),
                   _buildDrawerTile(
                     context,
-                    icon: Icons.history,
-                    title: 'Historique',
-                    onTap: () {},
+                    icon: Icons.supervised_user_circle,
+                    title: 'Profile',
+                    onTap: () {
+
+                    },
                   ),
                   _buildDrawerTile(
                     context,
@@ -229,7 +305,6 @@ class _UserHomePageState extends State<UserHomePage> {
                     context,
                     icon: Icons.logout,
                     title: 'Déconnexion',
-
                     onTap: () {
                       Navigator.pushReplacement(
                         context,
@@ -237,7 +312,6 @@ class _UserHomePageState extends State<UserHomePage> {
                       );
                     },
                   )
-
                 ],
               ),
             ),
@@ -256,12 +330,168 @@ class _UserHomePageState extends State<UserHomePage> {
           ],
         ),
       ),
-      body: const Center(
-        child: Text(
-          '',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w500),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Bonjour,',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w300,
+                color: Colors.blueGrey,
+              ),
+            ),
+            Text(
+              '$_prenom $_nom',
+              style: const TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: Colors.blueGrey,
+              ),
+            ),
+
+
+            const SizedBox(height: 15),
+            GridView.count(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: 2,
+              crossAxisSpacing: 15,
+              mainAxisSpacing: 15,
+              childAspectRatio: 0.9,
+              children: [
+                _buildDemandCard(
+                  title: 'Pannes inconnues',
+                  subtitle: '',
+                  icon: Icons.help_outline,
+                  color: Color(0xFF00B4D8), // Bleu moderne
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const DemandesTechnicienPage(),
+                        settings: const RouteSettings(arguments: 'unknown'),
+                      ),
+                    );
+                  },
+                ),
+                _buildDemandCard(
+                  title: 'Pannes connues',
+                  subtitle: '',
+                  icon: Icons.verified_outlined,
+                  color: Color(0xBE924EFF), // Indigo moderne
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const DemandesTechnicienPage(),
+                        settings: const RouteSettings(arguments: 'known'),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 30),
+            const Text(
+              'Statistiques rapides',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.blueGrey,
+              ),
+            ),
+            const SizedBox(height: 15),
+            Card(
+              elevation: 4,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _buildStatItem(
+                          value: '12',
+                          label: 'Demandes totales',
+                          icon: Icons.request_page,
+                          color: Colors.blue,
+                        ),
+                        _buildStatItem(
+                          value: '8',
+                          label: 'Résolues',
+                          icon: Icons.check,
+                          color: Colors.green,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _buildStatItem(
+                          value: '3',
+                          label: 'En cours',
+                          icon: Icons.hourglass_top,
+                          color: Colors.orange,
+                        ),
+                        _buildStatItem(
+                          value: '1',
+                          label: 'Urgentes',
+                          icon: Icons.warning,
+                          color: Colors.red,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
+    );
+  }
+
+  Widget _buildStatItem({
+    required String value,
+    required String label,
+    required IconData icon,
+    required Color color,
+  }) {
+    return Column(
+      children: [
+        Container(
+          width: 60,
+          height: 60,
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(15),
+          ),
+          child: Icon(icon, size: 30, color: color),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 12,
+            color: Colors.grey,
+          ),
+        ),
+      ],
     );
   }
 }

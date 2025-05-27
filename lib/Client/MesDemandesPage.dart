@@ -2,6 +2,7 @@ import 'package:car_mobile/Client/PieceRecommandeePage.dart';
 import 'package:car_mobile/Client/PlusPage.dart';
 import 'package:car_mobile/Client/TicketAssistancePage.dart';
 import 'package:car_mobile/Client/catalogue_page.dart';
+import 'package:car_mobile/Client/demandePrecedentes.dart';
 import 'package:car_mobile/Client/homeClient.dart';
 import 'package:car_mobile/Client/profile_page.dart';
 import 'package:car_mobile/login.dart';
@@ -117,10 +118,35 @@ class _MesDemandesPageState extends State<MesDemandesPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Mes Demandes', style: TextStyle(color: Colors.white)),
-        backgroundColor: Color(0xFF007896),
+        title: const Text(
+          'Mes Demandes',
+          style: TextStyle(color: Colors.white),
+        ),
+        backgroundColor: const Color(0xFF007896),
         iconTheme: const IconThemeData(color: Colors.white),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.handyman),
+            tooltip: 'Demandes avec technicien',
+            onPressed: () {
+              if (_userId != null) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => DemandesAvecTechnicienPage(userId: _userId!),
+                  ),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("ID utilisateur introuvable.")),
+                );
+              }
+            },
+          ),
+        ],
+
       ),
+
       drawer: Drawer(
         width: MediaQuery.of(context).size.width * 0.8,
         shape: const RoundedRectangleBorder(
@@ -306,7 +332,7 @@ class _MesDemandesPageState extends State<MesDemandesPage> {
             children: [
               const SizedBox(height: 20),
               const Text(
-                "Mes Demandes",
+                "Mes  nouvelles Demandes",
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
@@ -414,9 +440,9 @@ class _MesDemandesPageState extends State<MesDemandesPage> {
         required dynamic atelier,
       }) {
     // Vérifie si c'est une demande avec rendez-vous (fixe ou mobile)
-    final hasAppointment = typeEmplacement != null &&
-        (typeEmplacement == 'fixe' || typeEmplacement == 'mobile') &&
-        dateMaintenance != null;
+    final hasAppointment = dateMaintenance != null ||
+        (typeEmplacement != null &&
+            (typeEmplacement == 'fixe' || typeEmplacement == 'mobile'));
 
     if (hasAppointment) {
       return ElevatedButton.icon(
@@ -427,7 +453,7 @@ class _MesDemandesPageState extends State<MesDemandesPage> {
               builder: (context) => ConfirmationPage(
                 demandeId: demande['id'],
                 isFixed: typeEmplacement == 'fixe',
-                date: DateTime.tryParse(dateMaintenance),
+                date: dateMaintenance != null ? DateTime.tryParse(dateMaintenance) : null,
                 atelier: atelier,
               ),
             ),

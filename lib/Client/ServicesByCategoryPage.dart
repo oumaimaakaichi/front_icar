@@ -226,7 +226,7 @@ class _ServicesByCategoryPageState extends State<ServicesByCategoryPage> with Si
           controller: _tabController,
           tabs: const [
             Tab(text: 'Services', icon: Icon(Icons.build)),
-            Tab(text: 'Forfaits', icon: Icon(Icons.assignment)),
+            Tab(text: 'Packs', icon: Icon(Icons.assignment)),
           ],
           indicatorColor: Colors.teal,
           labelColor: Colors.teal,
@@ -306,7 +306,7 @@ class _ServicesByCategoryPageState extends State<ServicesByCategoryPage> with Si
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  'Forfait sélectionné',
+                  'Pack sélectionné',
                   style: TextStyle(
                     color: Colors.blue[800],
                     fontWeight: FontWeight.bold,
@@ -361,7 +361,7 @@ class _ServicesByCategoryPageState extends State<ServicesByCategoryPage> with Si
         decoration: InputDecoration(
           hintText: _currentTabIndex == 0
               ? 'Rechercher un service...'
-              : 'Rechercher un forfait...',
+              : 'Rechercher un Pack...',
           prefixIcon: const Icon(Icons.search, color: Colors.teal),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
@@ -491,7 +491,7 @@ class _ServicesByCategoryPageState extends State<ServicesByCategoryPage> with Si
             _searchQuery.isEmpty
                 ? isServices
                 ? 'Aucun service disponible'
-                : 'Aucun forfait disponible'
+                : 'Aucun Pack disponible'
                 : 'Aucun résultat trouvé',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
               color: Colors.grey[600],
@@ -502,8 +502,8 @@ class _ServicesByCategoryPageState extends State<ServicesByCategoryPage> with Si
             _searchQuery.isEmpty
                 ? isServices
                 ? 'Aucun service trouvé pour cette catégorie'
-                : 'Aucun forfait trouvé'
-                : 'Aucun ${isServices ? 'service' : 'forfait'} ne correspond à "$_searchQuery"',
+                : 'Aucun Pack trouvé'
+                : 'Aucun ${isServices ? 'service' : 'Pack'} ne correspond à "$_searchQuery"',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: Colors.grey,
             ),
@@ -600,7 +600,6 @@ class _ServicesByCategoryPageState extends State<ServicesByCategoryPage> with Si
       ),
     );
   }
-
 
   Widget _buildForfaitCard(Map<String, dynamic> forfait, bool isSelected) {
     return Card(

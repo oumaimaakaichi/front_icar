@@ -1,40 +1,47 @@
-
 import 'package:flutter/material.dart';
 import 'login.dart';
+import 'package:google_fonts/google_fonts.dart';
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       body: Stack(
         children: [
-          // Grand cercle décoratif en arrière-plan (simule le demi-cercle)
-          Positioned(
-            top: -100,
-            left: -180,
-            child: Container(
-              width: 300,
-              height: 300,
-              decoration: const BoxDecoration(
-                color: Color(0xFFE1F5FE),
-
-                shape: BoxShape.circle,
+          // Dégradé de fond élégant
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFFe1f5fe), Color(0xFFffffff)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
             ),
           ),
 
-
-
+          // Grand cercle décoratif
+          Positioned(
+            top: -120,
+            left: -150,
+            child: Container(
+              width: 300,
+              height: 300,
+              decoration: const BoxDecoration(
+                color: Color(0xFFB3E5FC),
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
 
           // Contenu principal
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24.0),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  const SizedBox(height: 0),
+                  const SizedBox(height: 30),
 
                   // Image
                   Expanded(
@@ -46,15 +53,13 @@ class HomePage extends StatelessWidget {
                     ),
                   ),
 
-                  const SizedBox(height: 0),
-
                   // Titre
-                  const Text(
-                    'Welcome To Icar',
-                    style: TextStyle(
-                      fontSize: 22,
+                   Text(
+                    'Welcome to ICAR',
+                    style: GoogleFonts.poppins(
+                      fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black,
+                      color: Colors.blue,
                     ),
                   ),
 
@@ -65,14 +70,14 @@ class HomePage extends StatelessWidget {
                     'Manage your truck maintenance efficiently\nand ensure optimal performance every day.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey,
+                      fontSize: 15,
+                      color: Colors.black54,
                     ),
                   ),
 
-                  const SizedBox(height: 50),
+                  const SizedBox(height: 30),
 
-                  // Indicateurs de pages
+                  // Indicateurs de page
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -86,28 +91,37 @@ class HomePage extends StatelessWidget {
 
                   const SizedBox(height: 30),
 
-                  // Bouton "Get Started"
+                  // Bouton stylisé "Get Started"
                   Align(
                     alignment: Alignment.centerRight,
-                    child: TextButton(
+                    child: ElevatedButton(
                       onPressed: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(builder: (context) => const LoginPage()),
                         );
                       },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF0288D1),
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        elevation: 4,
+                      ),
                       child: const Text(
                         'Get Started',
                         style: TextStyle(
                           fontSize: 16,
-                          color: Colors.blue,
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 1,
                         ),
                       ),
                     ),
                   ),
 
-
-                  const SizedBox(height: 80),
+                  const SizedBox(height: 60),
                 ],
               ),
             ),
@@ -117,14 +131,15 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  // Widget pour les points de pagination
+  // Widget pour les indicateurs de page
   Widget _buildDot(bool isActive) {
-    return Container(
-      width: isActive ? 10 : 8,
-      height: isActive ? 10 : 8,
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      width: isActive ? 12 : 8,
+      height: 8,
       decoration: BoxDecoration(
-        color: isActive ? Colors.blue : Colors.grey[300],
-        shape: BoxShape.circle,
+        color: isActive ? const Color(0xFF0288D1) : Colors.grey.shade300,
+        borderRadius: BorderRadius.circular(5),
       ),
     );
   }

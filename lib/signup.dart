@@ -52,7 +52,7 @@ class _SignUpPageState extends State<SignUpPage> {
 
   Future<void> _fetchAteliers() async {
     try {
-      final response = await http.get(Uri.parse('http://192.168.1.17:8000/api/ateliers'));
+      final response = await http.get(Uri.parse('http://192.168.1.149:8000/api/ateliers'));
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
         setState(() {
@@ -68,7 +68,7 @@ class _SignUpPageState extends State<SignUpPage> {
     }
   }
   Future<http.Response> submitForm() async {
-    final url = Uri.parse('http://localhost:8000/api/users/storeM');
+    final url = Uri.parse('http://192.168.1.162:8000/api/users/storeM');
     return await http.post(
       url,
       headers: {

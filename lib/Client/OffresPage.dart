@@ -23,6 +23,7 @@ class _OffresPageState extends State<OffresPage> {
   }
 
   Future<void> fetchOffres() async {
+    print(widget.clientId);
     final url = Uri.parse('http://192.168.1.17:8000/api/demandes/client/${widget.clientId}/offres');
     try {
       final response = await http.get(url);
