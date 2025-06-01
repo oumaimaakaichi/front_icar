@@ -24,7 +24,7 @@ class _DemandesAvecTechnicienPageState extends State<DemandesAvecTechnicienPage>
   }
 
   Future<void> fetchDemandes() async {
-    final url = Uri.parse('http://192.168.1.17:8000/api/demandes/user/${widget.userId}');
+    final url = Uri.parse('http://localhost:8000/api/demandes/user/${widget.userId}');
     final response = await http.get(url);
 
     if (response.statusCode == 200) {
@@ -49,7 +49,7 @@ class _DemandesAvecTechnicienPageState extends State<DemandesAvecTechnicienPage>
 
   Future<void> checkMeetLinkAvailability(int demandeId) async {
     try {
-      final url = Uri.parse('http://192.168.1.17:8000/api/demandes/$demandeId/meet-link');
+      final url = Uri.parse('http://localhost:8000/api/demandes/$demandeId/meet-link');
       final response = await http.get(url);
 
       if (response.statusCode == 200) {

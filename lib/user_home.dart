@@ -1,3 +1,4 @@
+import 'package:car_mobile/ProfilTechncien.dart';
 import 'package:car_mobile/TechnicienDemandesPage.dart';
 import 'package:car_mobile/login.dart';
 import 'package:car_mobile/settings_page.dart';
@@ -17,12 +18,7 @@ class _UserHomePageState extends State<UserHomePage> {
   final _storage = const FlutterSecureStorage();
   String? _nom = '';
   String? _prenom = '';
-
-  Future<void> _logout() async {
-    await _storage.delete(key: 'auth_token');
-    if (!mounted) return;
-    Navigator.pushReplacementNamed(context, '/login');
-  }
+  int _selectedIndex = 0;
 
   Future<void> _loadUserData() async {
     final userDataJson = await _storage.read(key: 'user_data');
@@ -42,44 +38,371 @@ class _UserHomePageState extends State<UserHomePage> {
     _loadUserData();
   }
 
-  Widget _buildDrawerTile(
-      BuildContext context, {
-        required IconData icon,
-        required String title,
-        required VoidCallback onTap,
-        Color? color,
-      }) {
-    final theme = Theme.of(context);
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
 
-    return ListTile(
-      leading: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: theme.colorScheme.primary.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(10),
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    const primaryColor = Color(0xFF6C5CE7); // Violet moderne
+    const secondaryColor = Color(0xFF00CEFF); // Bleu clair
+    const accentColor = Color(0xFFFD79A8); // Rose corail
+    const backgroundColor = Color(0xFFF5F6FA); // Gris très clair
+
+    return Scaffold(
+      backgroundColor: backgroundColor,
+      appBar: AppBar(
+        title: Text(
+          'Bienvenue, $_prenom',
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+            fontSize: 20,
+          ),
         ),
-        child: Icon(
-          icon,
-          color: color ?? theme.iconTheme.color,
+        centerTitle: false,
+        backgroundColor: primaryColor,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications_none),
+            onPressed: () {},
+          ),
+        ],
+      ),
+      drawer: _buildDrawer(theme, primaryColor),
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header avec statistiques
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 25),
+              decoration: BoxDecoration(
+                color: primaryColor,
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(30),
+                  bottomRight: Radius.circular(30),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Votre activité',
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(height: 15),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _buildStatCard(
+                        value: '24',
+                        label: 'Interventions',
+                        icon: Icons.construction,
+                        color: Colors.white,
+                        textColor: primaryColor,
+                      ),
+                      _buildStatCard(
+                        value: '18',
+                        label: 'Terminées',
+                        icon: Icons.check_circle,
+                        color: Colors.white,
+                        textColor: Colors.green,
+                      ),
+                      _buildStatCard(
+                        value: '4',
+                        label: 'En cours',
+                        icon: Icons.access_time,
+                        color: Colors.white,
+                        textColor: Colors.orange,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            // Section principale
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Titre section
+                  const Text(
+                    'Actions rapides',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 15),
+
+                  // Grille d'actions
+                  GridView.count(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 5,
+                    mainAxisSpacing: 5,
+                    childAspectRatio: 1.1,
+                    children: [
+                      _buildActionCard(
+                        title: 'Panne Inconnus',
+                        icon: Icons.add_circle_outline,
+                        color: secondaryColor,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const DemandesTechnicienPage(),
+                              settings: const RouteSettings(arguments: 'unknown'),
+                            ),
+                          );
+                        },
+                      ),
+                      _buildActionCard(
+                        title: 'Pannes connues',
+                        icon: Icons.verified_outlined,
+                        color: accentColor,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const DemandesTechnicienPage(),
+                              settings: const RouteSettings(arguments: 'known'),
+                            ),
+                          );
+                        },
+                      ),
+                      _buildActionCard(
+                        title: 'Historique',
+                        icon: Icons.history,
+                        color: const Color(0xFF00B894),
+                        onTap: () {},
+                      ),
+                      _buildActionCard(
+                        title: 'Assistance',
+                        icon: Icons.support_agent,
+                        color: const Color(0xFFFDCB6E),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => TechnicienTicketsPage()),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+
+                  // Section récentes interventions
+                  const SizedBox(height: 30),
+
+
+                ],
+              ),
+            ),
+          ],
         ),
       ),
-      title: Text(
-        title,
-        style: TextStyle(
-          color: color ?? theme.textTheme.bodyLarge?.color,
-          fontWeight: color != null ? FontWeight.bold : FontWeight.normal,
-        ),
+      bottomNavigationBar: BottomNavigationBar(
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Accueil',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.assignment),
+            label: 'Interventions',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: 'Profil',
+
+          ),
+        ],
+        currentIndex: _selectedIndex,
+        selectedItemColor: primaryColor,
+        unselectedItemColor: Colors.grey,
+        onTap: _onItemTapped,
+        backgroundColor: Colors.white,
+        elevation: 10,
       ),
-      onTap: onTap,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20),
-      minLeadingWidth: 20,
     );
   }
 
-  Widget _buildDemandCard({
+  Widget _buildDrawer(ThemeData theme, Color primaryColor) {
+    return Drawer(
+      width: MediaQuery.of(context).size.width * 0.75,
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          DrawerHeader(
+            decoration: BoxDecoration(
+              color: primaryColor,
+            ),
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Photo de profil
+                  Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.white,
+                        width: 3,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 10,
+                          spreadRadius: 2,
+                        ),
+                      ],
+                    ),
+                    child: ClipOval(
+                      child: Image.asset(
+                        'assets/images/profile.png',
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 15),
+                  Text(
+                    '$_prenom $_nom',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      shadows: [
+                        Shadow(
+                          blurRadius: 10,
+                          color: Colors.black26,
+                        ),
+                      ],
+                    ),
+                  ),
+
+
+                ],
+              ),
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.home),
+            title: const Text('Accueil'),
+            onTap: () {
+              Navigator.pop(context);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.assignment),
+            title: const Text('Mes interventions'),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const DemandesTechnicienPage()),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.support_agent),
+            title: const Text('Assistance'),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => TechnicienTicketsPage()),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.person),
+            title: const Text('Mon profil'),
+    onTap: () {
+    Navigator.push(
+    context,
+    MaterialPageRoute(builder: (context) => ProfileTechPage()),
+    );
+    },
+          ),
+          ListTile(
+            leading: const Icon(Icons.settings),
+            title: const Text('Paramètres'),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SettingsPage()),
+              );
+            },
+          ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.logout),
+            title: const Text('Déconnexion'),
+            onTap: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => LoginPage()),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatCard({
+    required String value,
+    required String label,
+    required IconData icon,
+    required Color color,
+    Color? textColor,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: textColor ?? Colors.white,
+            ),
+          ),
+          const SizedBox(height: 5),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: textColor?.withOpacity(0.8) ?? Colors.white70,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionCard({
     required String title,
-    required String subtitle,
     required IconData icon,
     required Color color,
     required VoidCallback onTap,
@@ -87,411 +410,111 @@ class _UserHomePageState extends State<UserHomePage> {
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(15),
       ),
       child: InkWell(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(15),
         onTap: onTap,
-        splashColor: color.withOpacity(0.2),
-        highlightColor: color.withOpacity(0.1),
         child: Container(
-          padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(15),
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
                 color.withOpacity(0.9),
-                color.withOpacity(0.6),
+                color.withOpacity(0.7),
               ],
             ),
-            boxShadow: [
-              BoxShadow(
-                color: color.withOpacity(0.3),
-                blurRadius: 10,
-                spreadRadius: 2,
-                offset: const Offset(0, 4),
-              ),
-            ],
           ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  icon,
-                  size: 30,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 20),
-              Text(
-                title,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 0.5,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              if (subtitle.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Text(
-                  subtitle,
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.9),
-                    fontSize: 14,
-                    height: 1.4,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Accueil',
-          style: TextStyle(
-            color: Colors.white,
-            fontFamily: 'Roboto',
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        backgroundColor: Colors.blueGrey,
-        iconTheme: const IconThemeData(color: Colors.white),
-      ),
-      drawer: Drawer(
-        width: MediaQuery.of(context).size.width * 0.8,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.horizontal(
-            right: Radius.circular(20),
-          ),
-        ),
-        child: Column(
-          children: [
-            // Header avec image de fond
-            Container(
-              height: 220,
-              decoration: BoxDecoration(
-                color: Colors.blueGrey,
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(20),
-                  bottomRight: Radius.circular(20),
-                ),
-              ),
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // Photo de profil
-                    Container(
-                      width: 120,
-                      height: 120,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: Colors.white,
-                          width: 3,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 10,
-                            spreadRadius: 2,
-                          ),
-                        ],
-                      ),
-                      child: ClipOval(
-                        child: Image.asset(
-                          'assets/images/9.png',
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 15),
-                    Text(
-                      '$_prenom $_nom',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        shadows: [
-                          Shadow(
-                            blurRadius: 10,
-                            color: Colors.black26,
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 5),
-                    const Text(
-                      'Utilisateur Premium',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            // Liste des options
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.only(top: 10),
-                children: [
-                  _buildDrawerTile(
-                    context,
-                    icon: Icons.dashboard,
-                    title: 'Accueil',
-                    onTap: () => Navigator.pop(context),
-                  ),
-                  _buildDrawerTile(
-                    context,
-                    icon: Icons.analytics,
-                    title: 'Tickets Assistance',
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => TechnicienTicketsPage()),
-                      );
-                    },
-                  ),
-                  _buildDrawerTile(
-                    context,
-                    icon: Icons.supervised_user_circle,
-                    title: 'Profile',
-                    onTap: () {
-
-                    },
-                  ),
-                  _buildDrawerTile(
-                    context,
-                    icon: Icons.settings,
-                    title: 'Paramètres',
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const SettingsPage()),
-                      );
-                    },
-                  ),
-                  _buildDrawerTile(
-                    context,
-                    icon: Icons.help_center,
-                    title: 'Aide & Support',
-                    onTap: () {},
-                  ),
-                  const Divider(height: 20, indent: 20, endIndent: 20),
-                  _buildDrawerTile(
-                    context,
-                    icon: Icons.logout,
-                    title: 'Déconnexion',
-                    onTap: () {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(builder: (context) => LoginPage()),
-                      );
-                    },
-                  )
-                ],
-              ),
-            ),
-
-            // Footer
-            Padding(
-              padding: const EdgeInsets.all(15),
-              child: Text(
-                'Version 1.0.0',
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 12,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Bonjour,',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.w300,
-                color: Colors.blueGrey,
-              ),
-            ),
-            Text(
-              '$_prenom $_nom',
-              style: const TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: Colors.blueGrey,
-              ),
-            ),
-
-
-            const SizedBox(height: 15),
-            GridView.count(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: 2,
-              crossAxisSpacing: 15,
-              mainAxisSpacing: 15,
-              childAspectRatio: 0.9,
+          child: Padding(
+            padding: const EdgeInsets.all(8),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildDemandCard(
-                  title: 'Pannes inconnues',
-                  subtitle: '',
-                  icon: Icons.help_outline,
-                  color: Color(0xFF00B4D8), // Bleu moderne
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const DemandesTechnicienPage(),
-                        settings: const RouteSettings(arguments: 'unknown'),
-                      ),
-                    );
-                  },
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    icon,
+                    size: 24,
+                    color: Colors.white,
+                  ),
                 ),
-                _buildDemandCard(
-                  title: 'Pannes connues',
-                  subtitle: '',
-                  icon: Icons.verified_outlined,
-                  color: Color(0xBE924EFF), // Indigo moderne
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const DemandesTechnicienPage(),
-                        settings: const RouteSettings(arguments: 'known'),
-                      ),
-                    );
-                  },
+                const SizedBox(height: 15),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 30),
-            const Text(
-              'Statistiques rapides',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.blueGrey,
-              ),
-            ),
-            const SizedBox(height: 15),
-            Card(
-              elevation: 4,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(15),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        _buildStatItem(
-                          value: '12',
-                          label: 'Demandes totales',
-                          icon: Icons.request_page,
-                          color: Colors.blue,
-                        ),
-                        _buildStatItem(
-                          value: '8',
-                          label: 'Résolues',
-                          icon: Icons.check,
-                          color: Colors.green,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        _buildStatItem(
-                          value: '3',
-                          label: 'En cours',
-                          icon: Icons.hourglass_top,
-                          color: Colors.orange,
-                        ),
-                        _buildStatItem(
-                          value: '1',
-                          label: 'Urgentes',
-                          icon: Icons.warning,
-                          color: Colors.red,
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildStatItem({
-    required String value,
-    required String label,
-    required IconData icon,
-    required Color color,
+  Widget _buildRecentIntervention({
+    required String title,
+    required String date,
+    required String status,
+    required Color statusColor,
   }) {
-    return Column(
-      children: [
-        Container(
-          width: 60,
-          height: 60,
+    return Card(
+      margin: const EdgeInsets.only(bottom: 10),
+      elevation: 1,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+        leading: Container(
+          width: 50,
+          height: 50,
           decoration: BoxDecoration(
-            color: color.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(15),
+            color: const Color(0xFF6C5CE7).withOpacity(0.1),
+            borderRadius: BorderRadius.circular(10),
           ),
-          child: Icon(icon, size: 30, color: color),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-            color: color,
+          child: const Icon(
+            Icons.construction,
+            color: Color(0xFF6C5CE7),
           ),
         ),
-        Text(
-          label,
+        title: Text(
+          title,
           style: const TextStyle(
-            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        subtitle: Text(
+          date,
+          style: const TextStyle(
             color: Colors.grey,
           ),
         ),
-      ],
+        trailing: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            color: statusColor.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Text(
+            status,
+            style: TextStyle(
+              color: statusColor,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

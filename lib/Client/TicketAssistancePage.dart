@@ -44,7 +44,7 @@ class _TicketAssistancePageState extends State<TicketAssistancePage> {
   int _selectedTab = 0;
   String? _nom = '';
   String? _prenom = '';
-  static const String baseUrl = 'http://192.168.1.17:8000';
+  static const String baseUrl = 'http://localhost:8000';
 
   // Pour les types de tickets
   List<TypeTicket> _ticketTypes = [];
@@ -861,7 +861,7 @@ class _NewTicketPageState extends State<NewTicketPage> {
   final _descriptionController = TextEditingController();
   TypeTicket? _selectedType;
   bool _isSubmitting = false;
-  static const String baseUrl = 'http://192.168.1.17:8000';
+  static const String baseUrl = 'http://localhost:8000';
 
   @override
   void initState() {

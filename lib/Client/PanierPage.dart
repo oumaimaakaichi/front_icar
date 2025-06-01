@@ -17,7 +17,7 @@ class _PanierPageState extends State<PanierPage> {
   List<dynamic> _panierItems = [];
   bool _isLoading = true;
   String _error = '';
-  static const String baseUrl = 'http://192.168.1.17:8000';
+  static const String baseUrl = 'http://localhost:8000';
 
   @override
   void initState() {

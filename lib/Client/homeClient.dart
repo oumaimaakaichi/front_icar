@@ -99,7 +99,7 @@ class _UserHomePageState extends State<ClientHomePage> {
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: Color(0xFF007896),
+        backgroundColor: Color(0xFF6797A2),
 
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [

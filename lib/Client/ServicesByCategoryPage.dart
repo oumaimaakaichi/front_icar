@@ -55,13 +55,13 @@ class _ServicesByCategoryPageState extends State<ServicesByCategoryPage> with Si
     try {
       // Fetch services
       final servicesResponse = await http.get(
-        Uri.parse('http://192.168.1.17:8000/api/panne/category/${widget.categoryId}'),
+        Uri.parse('http://localhost:8000/api/panne/category/${widget.categoryId}'),
         headers: {'Accept': 'application/json'},
       );
 
       // Fetch forfaits
       final forfaitsResponse = await http.get(
-        Uri.parse('http://192.168.1.17:8000/api/forfaits'),
+        Uri.parse('http://localhost:8000/api/forfaits'),
         headers: {'Accept': 'application/json'},
       );
 
@@ -158,7 +158,7 @@ class _ServicesByCategoryPageState extends State<ServicesByCategoryPage> with Si
       return;
     }
 
-    final url = Uri.parse('http://192.168.1.17:8000/api/demandes');
+    final url = Uri.parse('http://localhost:8000/api/demandes');
     try {
       final response = await http.post(
         url,

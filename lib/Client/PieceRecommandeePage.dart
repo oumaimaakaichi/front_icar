@@ -30,7 +30,7 @@ class _PieceRecommandeePageState extends State<PieceRecommandeePage> {
   Future<void> _fetchPieceRecommandee() async {
     try {
       final response = await http.get(
-        Uri.parse('http://192.168.1.17:8000/api/piece-recommandee/${widget.demandeId}'),
+        Uri.parse('http://localhost:8000/api/piece-recommandee/${widget.demandeId}'),
         headers: {
           'Accept': 'application/json',
         },
@@ -131,7 +131,7 @@ print(pieceInfo);
 
     try {
       final response = await http.put(
-        Uri.parse('http://192.168.1.17:8000/api/demandes/${widget.demandeId}/pieces-choisies'),
+        Uri.parse('http://localhost:8000/api/demandes/${widget.demandeId}/pieces-choisies'),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
@@ -441,7 +441,7 @@ print(pieceInfo);
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(12),
                   child: Image.network(
-                    'http://192.168.1.17:8000/storage/${pieceData['photo']}',
+                    'http://localhost:8000/storage/${pieceData['photo']}',
                     fit: BoxFit.contain,
                     errorBuilder: (context, error, stackTrace) =>
                     const Icon(Icons.image_not_supported, size: 60, color: Colors.grey),

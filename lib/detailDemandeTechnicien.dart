@@ -22,6 +22,7 @@ class _DemandeDetailPageState extends State<DemandeDetailPage> {
   bool _isGeneratingLink = false;
   bool _fluxDemandeEnvoye = false;
   bool? _partageAvecClient;
+  bool? _ouvertureMeet;
   bool? _EnvoyerAuClient;
   bool? _hasDemandeFlux;
   bool _isLoading = true;
@@ -48,7 +49,7 @@ class _DemandeDetailPageState extends State<DemandeDetailPage> {
   Future<void> _fetchMeetLink() async {
     try {
       final response = await http.get(
-        Uri.parse('http://192.168.1.17:8000/api/flux-par-demande/${widget.demande['id']}'),
+        Uri.parse('http://localhost:8000/api/flux-par-demande/${widget.demande['id']}'),
         headers: {'Accept': 'application/json'},
       );
 
@@ -56,6 +57,7 @@ class _DemandeDetailPageState extends State<DemandeDetailPage> {
         final data = jsonDecode(response.body);
         setState(() {
           _meetLink = data['lien_meet'];
+          _ouvertureMeet = data['ouvert'];
           _idFlux = data['id_flux'];
           _hasDemandeFlux = data['has_demande_flux'];
         });
@@ -70,11 +72,39 @@ class _DemandeDetailPageState extends State<DemandeDetailPage> {
       setState(() => _isLoading = false);
     }
   }
+  Future<void> _fermerFlux() async {
+    if (_idFlux == null) return;
 
+    setState(() => _isGeneratingLink = true);
+
+    try {
+      final response = await http.put(
+        Uri.parse('http://localhost:8000/api/flux-direct/$_idFlux/fermer'),
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        _showSuccessSnack('Flux fermé avec succès');
+        setState(() {
+          // Mettez à jour l'état local si nécessaire
+        });
+        await _fetchMeetLink(); // Rafraîchir les données
+      } else {
+        _showErrorSnack('Échec de la fermeture du flux');
+      }
+    } catch (e) {
+      _showErrorSnack('Erreur: ${e.toString()}');
+    } finally {
+      setState(() => _isGeneratingLink = false);
+    }
+  }
   Future<void> _fetchPartageStatus() async {
     try {
       final response = await http.get(
-        Uri.parse('http://192.168.1.17:8000/api/demande-flux/by-flux/$_idFlux'),
+        Uri.parse('http://localhost:8000/api/demande-flux/by-flux/$_idFlux'),
       );
 
       if (response.statusCode == 200) {
@@ -95,7 +125,7 @@ class _DemandeDetailPageState extends State<DemandeDetailPage> {
     try {
       print(_idFlux);
       final response = await http.put(
-        Uri.parse('http://192.168.1.17:8000/api/autoriser-partage/$_idFlux'),
+        Uri.parse('http://localhost:8000/api/autoriser-partage/$_idFlux'),
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
@@ -130,7 +160,7 @@ class _DemandeDetailPageState extends State<DemandeDetailPage> {
       final generatedLink = 'https://meet.jit.si/icar-${widget.demande['id']}';
 
       final response = await http.post(
-        Uri.parse('http://192.168.1.17:8000/api/flux-direct'),
+        Uri.parse('http://localhost:8000/api/flux-direct'),
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
@@ -164,7 +194,7 @@ class _DemandeDetailPageState extends State<DemandeDetailPage> {
 
     try {
       final response = await http.post(
-        Uri.parse('http://192.168.1.17:8000/api/demande-flux/'),
+        Uri.parse('http://localhost:8000/api/demande-flux/'),
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
@@ -246,7 +276,7 @@ class _DemandeDetailPageState extends State<DemandeDetailPage> {
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
         title: const Text('Détails de la demande', style: TextStyle(color: Colors.white)),
-        backgroundColor: Colors.blueGrey,
+        backgroundColor:  Color(0xFF6C5CE7),
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
         centerTitle: true,
@@ -621,6 +651,50 @@ class _DemandeDetailPageState extends State<DemandeDetailPage> {
                           ),
                         ),
                       ),
+
+
+
+                    if (_partageAvecClient == true && _ouvertureMeet == true)
+                      const SizedBox(height: 16),
+
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: _fermerFlux,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red[800],
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          elevation: 0,
+                        ),
+                        child: _isGeneratingLink
+                            ? const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            ),
+                            SizedBox(width: 8),
+                            Text("Fermeture en cours..."),
+                          ],
+                        )
+                            : const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.close, size: 18, color: Colors.white),
+                            SizedBox(width: 8),
+                            Text("Fermer le flux", style: TextStyle(color: Colors.white)),
+                          ],
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),

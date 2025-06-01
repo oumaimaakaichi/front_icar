@@ -36,7 +36,7 @@ class _AllPannesPageState extends State<AllPannesPage> {
 
     try {
       final response = await http.get(
-        Uri.parse('http://192.168.1.17:8000/api/category-panes'),
+        Uri.parse('http://localhost:8000/api/category-panes'),
         headers: {'Accept': 'application/json'},
       );
 
