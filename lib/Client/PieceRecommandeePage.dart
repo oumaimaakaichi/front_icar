@@ -12,25 +12,70 @@ class PieceRecommandeePage extends StatefulWidget {
   _PieceRecommandeePageState createState() => _PieceRecommandeePageState();
 }
 
-class _PieceRecommandeePageState extends State<PieceRecommandeePage> {
+class _PieceRecommandeePageState extends State<PieceRecommandeePage>
+    with TickerProviderStateMixin {
   List<dynamic> _pieces = [];
   int _currentIndex = 0;
   bool _isLoading = true;
-  String? _selectedPieceType; // 'original' ou 'commercial'
-  Map<int, Map<String, dynamic>> _selectedPieces = {}; // Pour stocker toutes les sélections
+  String? _selectedPieceType;
+  Map<int, Map<String, dynamic>> _selectedPieces = {};
 
-  bool get _isLastPiece => _currentIndex == _pieces.length - 1;
+  // Make these nullable and check before using
+  AnimationController? _slideController;
+  AnimationController? _fadeController;
+  Animation<Offset>? _slideAnimation;
+  Animation<double>? _fadeAnimation;
+
+  bool get _isLastPiece => _pieces.isNotEmpty && _currentIndex == _pieces.length - 1;
 
   @override
   void initState() {
     super.initState();
+    _initializeAnimations();
     _fetchPieceRecommandee();
+  }
+
+  void _initializeAnimations() {
+    _slideController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _fadeController = AnimationController(
+      duration: const Duration(milliseconds: 200),
+      vsync: this,
+    );
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(1.0, 0.0),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _slideController!,
+      curve: Curves.easeInOut,
+    ));
+
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _fadeController!,
+      curve: Curves.easeIn,
+    ));
+
+    _slideController!.forward();
+    _fadeController!.forward();
+  }
+
+  @override
+  void dispose() {
+    _slideController?.dispose();
+    _fadeController?.dispose();
+    super.dispose();
   }
 
   Future<void> _fetchPieceRecommandee() async {
     try {
       final response = await http.get(
-        Uri.parse('http://localhost:8000/api/piece-recommandee/${widget.demandeId}'),
+        Uri.parse('http://192.168.1.17:8000/api/piece-recommandee/${widget.demandeId}'),
         headers: {
           'Accept': 'application/json',
         },
@@ -46,49 +91,66 @@ class _PieceRecommandeePageState extends State<PieceRecommandeePage> {
         setState(() {
           _isLoading = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Aucune pièce recommandée trouvée')),
-        );
+        _showSnackBar('Aucune pièce recommandée trouvée', isError: true);
       }
     } catch (e) {
       setState(() {
         _isLoading = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur de connexion: ${e.toString()}')),
-      );
+      _showSnackBar('Erreur de connexion: ${e.toString()}', isError: true);
     }
+  }
+
+  void _showSnackBar(String message, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(
+              isError ? Icons.error_outline : Icons.check_circle_outline,
+              color: Colors.white,
+              size: 20,
+            ),
+            const SizedBox(width: 8),
+            Expanded(child: Text(message)),
+          ],
+        ),
+        backgroundColor: isError ? Colors.red[600] : Colors.green[600],
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        margin: const EdgeInsets.all(16),
+      ),
+    );
   }
 
   void _nextPiece() {
     if (_selectedPieceType == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Veuillez sélectionner une pièce avant de continuer')),
-      );
+      _showSnackBar('Veuillez sélectionner une pièce avant de continuer', isError: true);
       return;
     }
 
-    // Enregistrer la sélection actuelle
     _saveCurrentSelection();
 
     if (_currentIndex < _pieces.length - 1) {
+      _slideController?.reset();
       setState(() {
         _currentIndex++;
         _selectedPieceType = _getPreselectedTypeForCurrentIndex();
       });
+      _slideController?.forward();
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vous avez vu toutes les pièces recommandées')),
-      );
+      _showSnackBar('Vous avez vu toutes les pièces recommandées');
     }
   }
 
   void _previousPiece() {
     if (_currentIndex > 0) {
+      _slideController?.reset();
       setState(() {
         _currentIndex--;
         _selectedPieceType = _getPreselectedTypeForCurrentIndex();
       });
+      _slideController?.forward();
     }
   }
 
@@ -98,7 +160,7 @@ class _PieceRecommandeePageState extends State<PieceRecommandeePage> {
     final currentPiece = _pieces[_currentIndex];
     final pieceInfo = currentPiece['info'];
     final selectedPiece = currentPiece[_selectedPieceType!];
-print(pieceInfo);
+
     _selectedPieces[_currentIndex] = {
       'piece_id': pieceInfo['idPiece'],
       'type': _selectedPieceType!,
@@ -117,21 +179,16 @@ print(pieceInfo);
 
   Future<void> _confirmSelection() async {
     if (_selectedPieceType == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Veuillez sélectionner une pièce avant de confirmer')),
-      );
+      _showSnackBar('Veuillez sélectionner une pièce avant de confirmer', isError: true);
       return;
     }
 
-    // Sauvegarder la dernière sélection
     _saveCurrentSelection();
-
-    // Préparer les données pour l'API
     final piecesToSend = _selectedPieces.values.toList();
 
     try {
       final response = await http.put(
-        Uri.parse('http://localhost:8000/api/demandes/${widget.demandeId}/pieces-choisies'),
+        Uri.parse('http://192.168.1.17:8000/api/demandes/${widget.demandeId}/pieces-choisies'),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
@@ -142,22 +199,16 @@ print(pieceInfo);
       );
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) =>  MaintenanceTypePage(demandeId:widget.demandeId)),
-        );// Retour avec un indicateur de succès
+          MaterialPageRoute(builder: (context) => MaintenanceTypePage(demandeId: widget.demandeId)),
+        );
       } else {
         final errorData = jsonDecode(response.body);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(errorData['message'] ?? 'Erreur lors de l\'enregistrement')),
-        );
+        _showSnackBar(errorData['message'] ?? 'Erreur lors de l\'enregistrement', isError: true);
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur de connexion: ${e.toString()}')),
-      );
+      _showSnackBar('Erreur de connexion: ${e.toString()}', isError: true);
     }
   }
 
@@ -168,235 +219,331 @@ print(pieceInfo);
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Pièces Recommandées',
-            style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.grey[200],
-        iconTheme: const IconThemeData(color: Colors.black),
-        centerTitle: true,
-        elevation: 0,
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _pieces.isEmpty
-          ? const Center(child: Text('Aucune pièce recommandée pour cette demande'))
-          : _buildPieceView(),
-    );
-  }
-
-  Widget _buildPieceView() {
-    final currentPiece = _pieces[_currentIndex];
-    final originalPiece = currentPiece['original'];
-    final commercialPiece = currentPiece['commercial'];
-
-    return Column(
-      children: [
-        // En-tête avec informations sur la pièce
-        Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.grey.withOpacity(0.1),
-                blurRadius: 6,
-                offset: const Offset(0, 2),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Colors.blue[50]!,
+              Colors.white,
+              Colors.grey[50]!,
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              _buildAppBar(),
+              Expanded(
+                child: _isLoading
+                    ? _buildLoadingView()
+                    : _pieces.isEmpty
+                    ? _buildEmptyView()
+                    : _buildPieceView(),
               ),
             ],
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                currentPiece['info']['nom'],
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAppBar() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.grey[100],
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: IconButton(
+              icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black87),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Pièces Recommandées',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
+                if (!_isLoading && _pieces.isNotEmpty)
                   Text(
-                    'Réf: ${currentPiece['info']['num_piece']}',
+                    'Étape ${_currentIndex + 1} sur ${_pieces.length}',
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.grey[600],
                     ),
                   ),
-                  Text(
-                    'Pièce ${_currentIndex + 1}/${_pieces.length}',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-
-        // Contenu principal avec les deux parties
-        Expanded(
-          child: Row(
-            children: [
-              // Partie Pièce Originale
-              Expanded(
-                child: GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _selectedPieceType = 'original';
-                    });
-                  },
-                  child: _buildPieceSection(
-                    title: 'Originale',
-                    pieceData: originalPiece,
-                    color: _selectedPieceType == 'original'
-                        ? const Color(0xFFE1E1E1)
-                        : const Color(0xF2E8E8F6),
-                    isSelected: _selectedPieceType == 'original',
-                  ),
-                ),
-              ),
-
-              // Diviseur vertical
-              Container(
-                width: 1,
-                color: Colors.grey[300],
-                margin: const EdgeInsets.symmetric(vertical: 16),
-              ),
-
-              // Partie Pièce Commerciale
-              Expanded(
-                child: GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _selectedPieceType = 'commercial';
-                    });
-                  },
-                  child: _buildPieceSection(
-                    title: 'Commerciale',
-                    pieceData: commercialPiece,
-                    color: _selectedPieceType == 'commercial'
-                        ? const Color(0xFFE0E0E0)
-                        : const Color(0xFFEEEEEE),
-                    isSelected: _selectedPieceType == 'commercial',
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        // Pied de page avec prix main d'oeuvre et navigation
-        Container(
-          margin: const EdgeInsets.only(top: 16),
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.grey.withOpacity(0.1),
-                blurRadius: 8,
-                offset: const Offset(0, -3),
-              ),
-            ],
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(16),
-              topRight: Radius.circular(16),
+              ],
             ),
           ),
-          child: Column(
-            children: [
-
-              const SizedBox(height: 16),
-              if (_isLastPiece)
-              // Boutons Confirmer/Annuler pour la dernière pièce
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    ElevatedButton.icon(
-                      onPressed: _cancelSelection,
-                      icon: const Icon(Icons.cancel, size: 20),
-                      label: const Text('Annuler'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.grey[200],
-                        foregroundColor: Colors.black87,
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        elevation: 0,
-                      ),
-                    ),
-                    const SizedBox(width: 20),
-                    ElevatedButton.icon(
-                      onPressed: _confirmSelection,
-                      icon: const Icon(Icons.check_circle, size: 20),
-                      label: const Text('Confirmer'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF4CAF50),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                      ),
-                    ),
-                  ],
-                )
-              else
-              // Boutons Précédent/Suivant pour les autres pièces
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    ElevatedButton.icon(
-                      onPressed: _previousPiece,
-                      icon: const Icon(Icons.arrow_back, size: 20),
-                      label: const Text('Précédent'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.grey[200],
-                        foregroundColor: Colors.black87,
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        elevation: 0,
-                      ),
-                    ),
-                    const SizedBox(width: 20),
-                    ElevatedButton.icon(
-                      onPressed: _nextPiece,
-                      icon: const Icon(Icons.arrow_forward, size: 20),
-                      label: const Text('Suivant'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF007896),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                      ),
-                    ),
-                  ],
+          if (!_isLoading && _pieces.isNotEmpty)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xFF007896),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                '${_currentIndex + 1}/${_pieces.length}',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
                 ),
-            ],
-          ),
-        ),
-      ],
+              ),
+            ),
+        ],
+      ),
     );
   }
 
-  Widget _buildPieceSection({
+  Widget _buildLoadingView() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 20,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: const CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF007896)),
+            ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'Chargement des pièces...',
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey[600],
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyView() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              color: Colors.grey[100],
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.search_off,
+              size: 64,
+              color: Colors.grey[400],
+            ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'Aucune pièce recommandée',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey[700],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'pour cette demande',
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey[600],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPieceView() {
+    // Check if animations are initialized before using them
+    if (_slideAnimation == null || _fadeAnimation == null || _pieces.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    final currentPiece = _pieces[_currentIndex];
+    final originalPiece = currentPiece['original'];
+    final commercialPiece = currentPiece['commercial'];
+
+    return SlideTransition(
+      position: _slideAnimation!,
+      child: FadeTransition(
+        opacity: _fadeAnimation!,
+        child: Column(
+          children: [
+            _buildPieceHeader(currentPiece),
+            Expanded(
+              child: Container(
+                margin: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.08),
+                      blurRadius: 20,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: Row(
+                    children: [
+                      _buildPieceOption(
+                        title: 'Originale',
+                        pieceData: originalPiece,
+                        type: 'original',
+                        color: const Color(0xFF4A90E2),
+                        accentColor: const Color(0xFF357ABD),
+                      ),
+                      Container(
+                        width: 2,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.transparent,
+                              Colors.grey[300]!,
+                              Colors.transparent,
+                            ],
+                          ),
+                        ),
+                      ),
+                      _buildPieceOption(
+                        title: 'Commerciale',
+                        pieceData: commercialPiece,
+                        type: 'commercial',
+                        color: const Color(0xFF50C878),
+                        accentColor: const Color(0xFF45B26B),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            _buildNavigationFooter(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPieceHeader(Map<String, dynamic> currentPiece) {
+    return Container(
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF007896).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.build_circle,
+                  color: Color(0xFF007896),
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  currentPiece['info']['nom'],
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.grey[100],
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              'Réf: ${currentPiece['info']['num_piece']}',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[700],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPieceOption({
     required String title,
     required Map<String, dynamic> pieceData,
+    required String type,
     required Color color,
-    bool isSelected = false,
+    required Color accentColor,
   }) {
-    final disponibiliteField = title == 'Originale' ? 'disponibiliteOriginal' : 'disponibilitCommercial';
+    final isSelected = _selectedPieceType == type;
+    final disponibiliteField = type == 'original' ? 'disponibiliteOriginal' : 'disponibilitCommercial';
     final disponibiliteValue = pieceData[disponibiliteField];
     final bool isDisponible = disponibiliteValue == null
         ? true
@@ -404,119 +551,318 @@ print(pieceInfo);
         ? disponibiliteValue
         : disponibiliteValue.toString().toLowerCase() == 'true';
 
-    return Container(
-      decoration: BoxDecoration(
-        color: color,
-        border: isSelected
-            ? Border.all(color: const Color(0xFF007896), width: 2)
-            : null,
-      ),
-      padding: const EdgeInsets.all(9),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: title == 'Originale' ? Colors.blueGrey[800] : Colors.grey[800],
-            ),
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            _selectedPieceType = type;
+          });
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          decoration: BoxDecoration(
+            color: isSelected ? color.withOpacity(0.1) : Colors.transparent,
+            border: isSelected
+                ? Border.all(color: color, width: 2)
+                : null,
           ),
-          const SizedBox(height: 16),
-          if (pieceData['photo'] != null)
-            Expanded(
-              child: Container(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              // Header
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 12),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  gradient: LinearGradient(
+                    colors: [color, accentColor],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
                   borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.1),
-                      blurRadius: 6,
-                      offset: const Offset(0, 3),
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
                     ),
+                    if (isSelected)
+                      Container(
+                        margin: const EdgeInsets.only(top: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.check_circle, color: color, size: 16),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Sélectionnée',
+                              style: TextStyle(
+                                color: color,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                   ],
                 ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.network(
-                    'http://localhost:8000/storage/${pieceData['photo']}',
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) =>
-                    const Icon(Icons.image_not_supported, size: 60, color: Colors.grey),
+              ),
+
+              const SizedBox(height: 16),
+
+              // Image
+              Expanded(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.grey[50],
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey[200]!),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: pieceData['photo'] != null
+                        ? Image.network(
+                      'http://192.168.1.17:8000/storage/${pieceData['photo']}',
+                      fit: BoxFit.contain,
+                      width: double.infinity,
+                      errorBuilder: (context, error, stackTrace) =>
+                          _buildImagePlaceholder(),
+                    )
+                        : _buildImagePlaceholder(),
                   ),
                 ),
               ),
-            )
-          else
-            Expanded(
-              child: const Icon(Icons.image_not_supported, size: 60, color: Colors.grey),
-            ),
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.1),
-                  blurRadius: 4,
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text('Prix:',
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87)),
-                    Text(
-                      '${pieceData['prix']?.toString() ?? 'N/A'} €',
-                      style: const TextStyle(
-                          fontSize: 16,
-                          color: Colors.blueGrey),
+
+              const SizedBox(height: 16),
+
+              // Info Card
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey[200]!),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 5,
+                      offset: const Offset(0, 2),
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                child: Column(
                   children: [
-                    Text(
-                      isDisponible ? 'Disponible' : 'Non disponible',
-                      style: TextStyle(
-                          color: isDisponible ? Colors.green[700] : Colors.red[700],
-                          fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                ),
-                if (isDisponible && pieceData['date_disponibilite'] != null) ...[
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Dispo:',
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Prix:',
                           style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: color.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            '${pieceData['prix']?.toString() ?? 'N/A'} €',
+                            style: TextStyle(
+                              fontSize: 16,
                               fontWeight: FontWeight.bold,
-                              color: Colors.black87)),
-                      Text(
-                        pieceData['date_disponibilite'],
-                        style: const TextStyle(color: Colors.black87),
+                              color: color,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    // Replace the problematic Row widget around line 694 with this fixed version:
+
+                    Row(
+                      children: [
+                        Icon(
+                          isDisponible ? Icons.check_circle : Icons.cancel,
+                          color: isDisponible ? Colors.green[600] : Colors.red[600],
+                          size: 18,
+                        ),
+                        const SizedBox(width: 8),
+                        Flexible(  // Changed from direct Text to Flexible wrapper
+                          child: Text(
+                            isDisponible ? 'Disponible' : 'Indisponible',
+                            style: TextStyle(
+                              color: isDisponible ? Colors.green[700] : Colors.red[700],
+                              fontWeight: FontWeight.w600,
+                            ),
+                            overflow: TextOverflow.ellipsis,  // Add ellipsis for very long text
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (isDisponible && pieceData['date_disponibilite'] != null) ...[
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.schedule,
+                            color: Colors.grey[600],
+                            size: 16,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '${pieceData['date_disponibilite']}',
+                            style: TextStyle(
+                              color: Colors.grey[700],
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
-                  ),
-                ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
-              ],
+  Widget _buildImagePlaceholder() {
+    return Container(
+      width: double.infinity,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.image_not_supported_outlined,
+            size: 48,
+            color: Colors.grey[400],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Image non disponible',
+            style: TextStyle(
+              color: Colors.grey[500],
+              fontSize: 12,
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildNavigationFooter() {
+    return Container(
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 20,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: _isLastPiece ? _buildConfirmButtons() : _buildNavigationButtons(),
+    );
+  }
+
+  Widget _buildNavigationButtons() {
+    return Row(
+      children: [
+        Expanded(
+          child: ElevatedButton.icon(
+            onPressed: _currentIndex > 0 ? _previousPiece : null,
+            icon: const Icon(Icons.arrow_back_ios, size: 18),
+            label: const Text('Précédent'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.grey[100],
+              foregroundColor: Colors.black87,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 0,
+            ),
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: ElevatedButton.icon(
+            onPressed: _nextPiece,
+            icon: const Icon(Icons.arrow_forward_ios, size: 18),
+            label: const Text('Suivant'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF007896),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 2,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildConfirmButtons() {
+    return Row(
+      children: [
+        Expanded(
+          child: ElevatedButton.icon(
+            onPressed: _cancelSelection,
+            icon: const Icon(Icons.close, size: 18),
+            label: const Text('Annuler'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.grey[100],
+              foregroundColor: Colors.black87,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 0,
+            ),
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: ElevatedButton.icon(
+            onPressed: _confirmSelection,
+            icon: const Icon(Icons.check_circle, size: 18),
+            label: const Text('Confirmer'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF4CAF50),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 2,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

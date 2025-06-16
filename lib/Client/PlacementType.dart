@@ -44,7 +44,7 @@ class _MaintenanceTypePageState extends State<MaintenanceTypePage> {
 
     try {
       final response = await http.get(
-        Uri.parse('http://localhost:8000/api/ateliers'),
+        Uri.parse('http://192.168.1.17:8000/api/ateliers'),
       );
 
       if (response.statusCode == 200) {
@@ -146,7 +146,7 @@ class _MaintenanceTypePageState extends State<MaintenanceTypePage> {
       final timeStr = _selectedTime!.format(context);
 
       final response = await http.put(
-        Uri.parse('http://localhost:8000/api/demandes/${widget.demandeId}/update-info'),
+        Uri.parse('http://192.168.1.17:8000/api/demandes/${widget.demandeId}/update-info'),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
@@ -861,7 +861,7 @@ class ConfirmationPage extends StatelessWidget {
 
   Future<List<dynamic>> _fetchCataloguePieces() async {
     final response = await http.get(
-      Uri.parse('http://localhost:8000/api/catalogues'),
+      Uri.parse('http://192.168.1.17:8000/api/catalogues'),
     );
 
     if (response.statusCode == 200) {
@@ -873,7 +873,7 @@ class ConfirmationPage extends StatelessWidget {
 
   Future<Map<String, dynamic>> _fetchDemandeDetails() async {
     final response = await http.get(
-      Uri.parse('http://localhost:8000/api/$demandeId/confirmation-details'),
+      Uri.parse('http://192.168.1.17:8000/api/$demandeId/confirmation-details'),
     );
 
     if (response.statusCode == 200) {
@@ -1216,7 +1216,7 @@ class ConfirmationPage extends StatelessWidget {
   Future<void> _showPiecesDialog(BuildContext context, List<dynamic> pieces) async {
     try {
       final response = await http.get(
-        Uri.parse('http://localhost:8000/api/catalogues'),
+        Uri.parse('http://192.168.1.17:8000/api/catalogues'),
         headers: {'Accept': 'application/json'},
       );
 

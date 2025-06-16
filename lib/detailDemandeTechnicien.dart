@@ -49,7 +49,7 @@ class _DemandeDetailPageState extends State<DemandeDetailPage> {
   Future<void> _fetchMeetLink() async {
     try {
       final response = await http.get(
-        Uri.parse('http://localhost:8000/api/flux-par-demande/${widget.demande['id']}'),
+        Uri.parse('http://192.168.1.17:8000/api/flux-par-demande/${widget.demande['id']}'),
         headers: {'Accept': 'application/json'},
       );
 
@@ -79,7 +79,7 @@ class _DemandeDetailPageState extends State<DemandeDetailPage> {
 
     try {
       final response = await http.put(
-        Uri.parse('http://localhost:8000/api/flux-direct/$_idFlux/fermer'),
+        Uri.parse('http://192.168.1.17:8000/api/flux-direct/$_idFlux/fermer'),
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
@@ -104,7 +104,7 @@ class _DemandeDetailPageState extends State<DemandeDetailPage> {
   Future<void> _fetchPartageStatus() async {
     try {
       final response = await http.get(
-        Uri.parse('http://localhost:8000/api/demande-flux/by-flux/$_idFlux'),
+        Uri.parse('http://192.168.1.17:8000/api/demande-flux/by-flux/$_idFlux'),
       );
 
       if (response.statusCode == 200) {
@@ -125,7 +125,7 @@ class _DemandeDetailPageState extends State<DemandeDetailPage> {
     try {
       print(_idFlux);
       final response = await http.put(
-        Uri.parse('http://localhost:8000/api/autoriser-partage/$_idFlux'),
+        Uri.parse('http://192.168.1.17:8000/api/autoriser-partage/$_idFlux'),
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
@@ -160,7 +160,7 @@ class _DemandeDetailPageState extends State<DemandeDetailPage> {
       final generatedLink = 'https://meet.jit.si/icar-${widget.demande['id']}';
 
       final response = await http.post(
-        Uri.parse('http://localhost:8000/api/flux-direct'),
+        Uri.parse('http://192.168.1.17:8000/api/flux-direct'),
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
@@ -194,7 +194,7 @@ class _DemandeDetailPageState extends State<DemandeDetailPage> {
 
     try {
       final response = await http.post(
-        Uri.parse('http://localhost:8000/api/demande-flux/'),
+        Uri.parse('http://192.168.1.17:8000/api/demande-flux/'),
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',

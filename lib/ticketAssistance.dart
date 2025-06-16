@@ -566,7 +566,7 @@ class __AddTicketFormState extends State<_AddTicketForm> {
 
     try {
       final response = await http.post(
-        Uri.parse('http://192.168.1.162:8000/api/tickets'),
+        Uri.parse('http://192.168.113.216:8000/api/tickets'),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',

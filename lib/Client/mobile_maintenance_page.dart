@@ -55,7 +55,7 @@ class _MobileMaintenanceFlowState extends State<MobileMaintenanceFlow> {
           style: TextStyle(color: Colors.white),
         ),
         centerTitle: true,
-        backgroundColor: const Color(0xFF0C2B4B),
+        backgroundColor: const Color(0xFF6797A2),
         iconTheme: const IconThemeData(color: Colors.white),
         elevation: 0,
         shape: const RoundedRectangleBorder(
@@ -88,7 +88,7 @@ class _MobileMaintenanceFlowState extends State<MobileMaintenanceFlow> {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        side: const BorderSide(color: Color(0xFF1A4B8C)),
+                        side: const BorderSide(color: Color(0xFF6797A2)),
                       ),
                       child: const Text(
                         'Retour',
@@ -98,7 +98,7 @@ class _MobileMaintenanceFlowState extends State<MobileMaintenanceFlow> {
                   ElevatedButton(
                     onPressed: details.onStepContinue,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1A4B8C),
+                      backgroundColor: const Color(0xFF6797A2),
                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
@@ -177,11 +177,11 @@ class _MobileMaintenanceFlowState extends State<MobileMaintenanceFlow> {
                   },
                   calendarStyle: const CalendarStyle(
                     selectedDecoration: BoxDecoration(
-                      color: Color(0xFF1A4B8C),
+                      color: Color(0xFF6797A2),
                       shape: BoxShape.circle,
                     ),
                     todayDecoration: BoxDecoration(
-                      color: Color(0xFF3A7BDB),
+                      color: Color(0xFF6797A2),
                       shape: BoxShape.circle,
                     ),
                   ),
@@ -192,8 +192,8 @@ class _MobileMaintenanceFlowState extends State<MobileMaintenanceFlow> {
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                     ),
-                    leftChevronIcon: const Icon(Icons.chevron_left, color: Color(0xFF1A4B8C)),
-                    rightChevronIcon: const Icon(Icons.chevron_right, color: Color(0xFF1A4B8C)),
+                    leftChevronIcon: const Icon(Icons.chevron_left, color: Color(0xFF6797A2)),
+                    rightChevronIcon: const Icon(Icons.chevron_right, color: Color(0xFF6797A2)),
                   ),
                 ),
               ],
@@ -829,7 +829,7 @@ class _MobileMaintenanceFlowState extends State<MobileMaintenanceFlow> {
       }
 
       final response = await http.put(
-        Uri.parse('http://localhost:8000/api/demandes/${widget.demandeId}/update-location'),
+        Uri.parse('http://192.168.1.17:8000/api/demandes/${widget.demandeId}/update-location'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(requestData),
       );
@@ -949,7 +949,7 @@ class MaintenanceConfirmationPage extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
-                              color: Color(0xFF0C2B4B),
+                              color: Color(0xFF6797A2),
                             ),
                           ),
                           const SizedBox(height: 20),
@@ -1022,7 +1022,7 @@ class MaintenanceConfirmationPage extends StatelessWidget {
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
-                        foregroundColor: const Color(0xFF0C2B4B),
+                        foregroundColor: const Color(0xFF6797A2),
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),

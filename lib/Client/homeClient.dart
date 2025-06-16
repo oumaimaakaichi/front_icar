@@ -1,13 +1,11 @@
-import 'package:car_mobile/Client/MesDemandesPage.dart';
 import 'package:car_mobile/Client/PanierPage.dart';
 import 'package:car_mobile/Client/PlusPage.dart';
 import 'package:car_mobile/Client/TicketAssistancePage.dart';
+import 'package:car_mobile/Client/VoiturePanneInconnu.dart';
 import 'package:car_mobile/Client/Voitures.dart';
 import 'package:car_mobile/Client/catalogue_page.dart';
 import 'package:car_mobile/Client/profile_page.dart';
 import 'package:car_mobile/login.dart';
-import 'package:car_mobile/settings_page.dart';
-import 'package:car_mobile/ticketAssistance.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dart:convert';
@@ -25,16 +23,8 @@ class _UserHomePageState extends State<ClientHomePage> {
   String? _prenom = '';
   int? _userId;
 
-  Future<void> _logout() async {
-    await _storage.delete(key: 'auth_token');
-    if (!mounted) return;
-    Navigator.pushReplacementNamed(context, '/login');
-  }
-
   Future<void> _loadUserData() async {
     final userDataJson = await _storage.read(key: 'user_data');
-    print("Données utilisateur: $userDataJson");
-
     if (userDataJson != null) {
       final userData = jsonDecode(userDataJson);
       if (!mounted) return;
@@ -51,7 +41,6 @@ class _UserHomePageState extends State<ClientHomePage> {
     super.initState();
     _loadUserData();
   }
-
   Widget _buildDrawerTile(
       BuildContext context, {
         required IconData icon,
@@ -86,26 +75,35 @@ class _UserHomePageState extends State<ClientHomePage> {
       minLeadingWidth: 20,
     );
   }
-
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
+    final primaryColor = const Color(0xFF6797A2);
+    final secondaryColor = const Color(0xFF4CA1A3);
+    final accentColor = const Color(0xFF00BCD4);
     return Scaffold(
       appBar: AppBar(
         title: const Text(
           'Accueil',
           style: TextStyle(
             color: Colors.white,
-            fontSize: 18,
+            fontSize: 20,
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: Color(0xFF6797A2),
-
+        backgroundColor: primaryColor,
         iconTheme: const IconThemeData(color: Colors.white),
+        elevation: 0,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            bottom: Radius.circular(20),
+          ),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.shopping_cart),
-            onPressed: () async {
+            onPressed: () {
               if (_userId != null) {
                 Navigator.push(
                   context,
@@ -117,13 +115,11 @@ class _UserHomePageState extends State<ClientHomePage> {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text('Veuillez vous connecter'),
-                    duration: Duration(seconds: 2),
                   ),
                 );
               }
             },
           ),
-          const SizedBox(width: 8),
         ],
       ),
       drawer: Drawer(
@@ -135,87 +131,89 @@ class _UserHomePageState extends State<ClientHomePage> {
         ),
         child: Column(
           children: [
+            // Header avec image de fond
             Container(
-              height: 220,
+              height: 280,
               decoration: BoxDecoration(
-                color: Color(0xFF007896),
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(20),
-                  bottomRight: Radius.circular(20),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [primaryColor, secondaryColor, secondaryColor],
                 ),
-                image: const DecorationImage(
-                  image: AssetImage('assets/images/background_pattern.png'),
-                  fit: BoxFit.cover,
-                  colorFilter: ColorFilter.mode(
-                    Colors.teal,
-                    BlendMode.dstATop,
-                  ),
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(30),
+                  bottomRight: Radius.circular(30),
                 ),
               ),
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    InkWell(
-                      onTap: () {
-                        Navigator.pop(context);
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => const ProfilePage()),
-                        );
-                      },
-                      child: Container(
-                        width: 100,
-                        height: 100,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: Colors.white,
-                            width: 3,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              blurRadius: 10,
-                              spreadRadius: 2,
+              child: Stack(
+                children: [
+                  // Motif de fond décoratif
+                  Positioned.fill(
+                    child: CustomPaint(
+                      painter: CirclePatternPainter(),
+                    ),
+                  ),
+                  Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Hero(
+                          tag: 'profile_image',
+                          child: Container(
+                            width: 120,
+                            height: 120,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 4),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.2),
+                                  blurRadius: 20,
+                                  spreadRadius: 5,
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                        child: ClipOval(
-                          child: Image.asset(
-                            'assets/images/profile.png',
-                            fit: BoxFit.cover,
+                            child: ClipOval(
+                              child: Image.asset(
+                                'assets/images/profile.png',
+                                fit: BoxFit.cover,
+                              ),
+                            ),
                           ),
                         ),
-                      ),
-                    ),
-                    const SizedBox(height: 15),
-                    Text(
-                      '$_prenom $_nom',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        shadows: [
-                          Shadow(
-                            blurRadius: 10,
-                            color: Colors.black26,
+                        const SizedBox(height: 20),
+                        Text(
+                          '$_prenom $_nom',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5,
                           ),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: const Text(
+                            'Client Premium',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 5),
-                    const Text(
-                      'Utilisateur Premium',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
+            // Liste des options
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.only(top: 10),
@@ -224,7 +222,12 @@ class _UserHomePageState extends State<ClientHomePage> {
                     context,
                     icon: Icons.home,
                     title: 'Home',
-                    onTap: () => Navigator.pop(context),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const ClientHomePage()),
+                      );
+                    },
                   ),
                   _buildDrawerTile(
                     context,
@@ -248,7 +251,6 @@ class _UserHomePageState extends State<ClientHomePage> {
                       );
                     },
                   ),
-
                   _buildDrawerTile(
                     context,
                     icon: Icons.build,
@@ -260,7 +262,6 @@ class _UserHomePageState extends State<ClientHomePage> {
                       );
                     },
                   ),
-
                   _buildDrawerTile(
                     context,
                     icon: Icons.add,
@@ -272,6 +273,7 @@ class _UserHomePageState extends State<ClientHomePage> {
                       );
                     },
                   ),
+
                   const Divider(height: 20, indent: 20, endIndent: 20),
                   _buildDrawerTile(
                     context,
@@ -287,6 +289,7 @@ class _UserHomePageState extends State<ClientHomePage> {
                 ],
               ),
             ),
+            // Footer
             Padding(
               padding: const EdgeInsets.all(15),
               child: Text(
@@ -300,72 +303,81 @@ class _UserHomePageState extends State<ClientHomePage> {
           ],
         ),
       ),
-      body: SafeArea(
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Theme.of(context).brightness == Brightness.dark
-                    ? Colors.grey[900]!
-                    : Colors.grey[50]!,
-                Theme.of(context).brightness == Brightness.dark
-                    ? Colors.grey[850]!
-                    : Colors.white,
-              ],
-            ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              isDarkMode ? Colors.grey[900]! : Colors.grey[50]!,
+              isDarkMode ? Colors.grey[800]! : Colors.white,
+            ],
           ),
+        ),
+        child: SingleChildScrollView(
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                "Que souhaitez-vous faire ?",
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
-                  color: Theme.of(context).brightness == Brightness.dark
-                      ? Colors.white
-                      : Colors.grey[800],
-                  letterSpacing: -0.5,
+              const SizedBox(height: 24),
+              // Section de bienvenue avec carte profil
+              _buildWelcomeSection(context, primaryColor, secondaryColor , primaryColor),
+              const SizedBox(height: 24),
+
+              // Section services rapides
+              _buildQuickServicesSection(context, primaryColor),
+              const SizedBox(height: 24),
+
+
+
+              // Section principales fonctionnalités
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Que souhaitez-vous faire ?',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: isDarkMode ? Colors.white : Colors.grey[800],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildFeatureCard(
+                      context,
+                      title: "Panne Connue",
+                      description: "Trouvez des solutions aux problèmes fréquents",
+                      icon: Icons.auto_fix_high,
+                      color: Colors.blueGrey,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const Voiture()),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    _buildFeatureCard(
+                      context,
+                      title: "Panne Inconnue",
+                      description: "Créez un ticket d'assistance personnalisé",
+                      icon: Icons.support_agent,
+                      color: primaryColor,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const VoiturePanneInconnu()),
+                        );
+                      },
+                    ),
+
+
+                  ],
                 ),
               ),
-              const SizedBox(height: 8),
-              Text(
-                "Choisissez une option ci-dessous",
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Theme.of(context).brightness == Brightness.dark
-                      ? Colors.grey[400]
-                      : Colors.grey[600],
-                ),
-              ),
-              const SizedBox(height: 30),
-              _buildPanneCard(
-                context,
-                title: "Panne Connue",
-                description: "Voir les solutions aux problèmes fréquents",
-                icon: Icons.auto_fix_high_rounded,
-                color: Colors.blueAccent,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const Voiture()),
-                  );
-                },
-              ),
-              const SizedBox(height: 20),
-              _buildPanneCard(
-                context,
-                title: "Panne Inconnue",
-                description: "Créer un ticket d'assistance personnalisé",
-                icon: Icons.support_agent_rounded,
-                color: Colors.deepOrangeAccent,
-                onTap: () {
-                  // Handle tap
-                },
-              ),
+              const SizedBox(height: 24),
+
+
             ],
           ),
         ),
@@ -373,7 +385,202 @@ class _UserHomePageState extends State<ClientHomePage> {
     );
   }
 
-  Widget _buildPanneCard(
+  Widget _buildWelcomeSection(BuildContext context, Color primaryColor, Color secondaryColor, Color accentColor) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 24),
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [primaryColor, secondaryColor, accentColor],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(25),
+        boxShadow: [
+          BoxShadow(
+            color: primaryColor.withOpacity(0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+            spreadRadius: 5,
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Hero(
+            tag: 'profile_avatar',
+            child: Container(
+              width: 70,
+              height: 70,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 3),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.white.withOpacity(0.3),
+                    blurRadius: 10,
+                    spreadRadius: 2,
+                  ),
+                ],
+              ),
+              child: ClipOval(
+                child: Image.asset(
+                  'assets/images/profile.png',
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 20),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Bonjour, $_prenom ! 👋',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Prêt à prendre soin de votre véhicule ?',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.9),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  Widget _buildQuickServicesSection(BuildContext context, Color primaryColor) {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 15),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Services rapides',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.white
+                      : Colors.grey[800],
+                ),
+              ),
+              TextButton(
+                onPressed: () {},
+                child: Text(
+                  'Voir tout',
+                  style: TextStyle(
+                    color: primaryColor,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            children: [
+
+              _buildQuickServiceButton(
+                icon: Icons.build,
+                label: 'Pièces',
+                color: Colors.orangeAccent,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const CataloguePage()),
+                  );
+                },
+              ),
+              const SizedBox(width: 12),
+              _buildQuickServiceButton(
+                icon: Icons.schedule,
+                label: 'RDV',
+                color: Colors.brown,
+                onTap: () {},
+              ),
+              const SizedBox(width: 12),
+              _buildQuickServiceButton(
+                icon: Icons.history,
+                label: 'Historique',
+                color: Colors.blueAccent,
+                onTap: () {},
+              ),
+
+
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildQuickServiceButton({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(15),
+      onTap: onTap,
+      child: Container(
+        width: 100,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(15),
+          border: Border.all(color: color.withOpacity(0.3), width: 1),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.2),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: color, size: 20),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.white
+                    : Colors.grey[800],
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFeatureCard(
       BuildContext context, {
         required String title,
         required String description,
@@ -382,97 +589,92 @@ class _UserHomePageState extends State<ClientHomePage> {
         required VoidCallback onTap,
       }) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final textColor = isDarkMode ? Colors.white : Colors.grey[800];
-    final cardColor = isDarkMode ? Colors.grey[850]! : Colors.white;
 
-    return GestureDetector(
+    return InkWell(
+      borderRadius: BorderRadius.circular(15),
       onTap: onTap,
       child: Container(
-        width: double.infinity,
-        margin: const EdgeInsets.symmetric(vertical: 8),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: cardColor,
-          borderRadius: BorderRadius.circular(20),
+          color: isDarkMode ? Colors.grey[800] : Colors.white,
+          borderRadius: BorderRadius.circular(15),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 15,
-              spreadRadius: 1,
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
               offset: const Offset(0, 5),
             ),
           ],
         ),
-        child: Stack(
+        child: Row(
           children: [
-            Positioned(
-              right: 0,
-              top: 0,
-              child: Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  borderRadius: const BorderRadius.only(
-                    topRight: Radius.circular(20),
-                    bottomLeft: Radius.circular(40),
-                  ),
-                ),
+            Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.2),
+                shape: BoxShape.circle,
               ),
+              child: Icon(icon, color: color),
             ),
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Row(
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    width: 60,
-                    height: 60,
-                    decoration: BoxDecoration(
-                      color: color.withOpacity(0.2),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      icon,
-                      size: 30,
-                      color: color,
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: isDarkMode ? Colors.white : Colors.grey[800],
                     ),
                   ),
-                  const SizedBox(width: 20),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: textColor,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          description,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                            height: 1.4,
-                          ),
-                        ),
-                      ],
+                  const SizedBox(height: 4),
+                  Text(
+                    description,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  Icon(
-                    Icons.arrow_forward_ios_rounded,
-                    size: 18,
-                    color: color,
                   ),
                 ],
               ),
+            ),
+            Icon(
+              Icons.arrow_forward_ios,
+              size: 16,
+              color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
             ),
           ],
         ),
       ),
     );
   }
+
+
+}
+class CirclePatternPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white.withOpacity(0.1)
+      ..style = PaintingStyle.fill;
+
+    final circles = [
+      {'x': size.width * 0.2, 'y': size.height * 0.3, 'r': 50.0},
+      {'x': size.width * 0.8, 'y': size.height * 0.2, 'r': 30.0},
+      {'x': size.width * 0.9, 'y': size.height * 0.7, 'r': 40.0},
+      {'x': size.width * 0.1, 'y': size.height * 0.8, 'r': 25.0},
+    ];
+
+    for (var circle in circles) {
+      canvas.drawCircle(
+        Offset(circle['x'] as double, circle['y'] as double),
+        circle['r'] as double,
+        paint,
+      );
+    }
+  }
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
 }
