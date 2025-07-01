@@ -29,7 +29,7 @@ class _CataloguePageState extends State<CataloguePage> {
   final _storage = const FlutterSecureStorage();
   String? _nom = '';
   String? _prenom = '';
-  static const String baseUrl = 'http://192.168.1.17:8000';
+  static const String baseUrl = 'http://192.168.1.11:8000';
 
   Future<void> _loadUserData() async {
     final userDataJson = await _storage.read(key: 'user_data');
@@ -266,7 +266,7 @@ class _CataloguePageState extends State<CataloguePage> {
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [primaryColor, secondaryColor, secondaryColor],
+                  colors: [primaryColor, primaryColor, primaryColor],
                 ),
                 borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(30),

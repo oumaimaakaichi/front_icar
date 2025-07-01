@@ -41,10 +41,10 @@ class _RapportMaintenancePageState extends State<RapportMaintenancePage> {
     try {
       final token = await _storage.read(key: 'auth_token');
       final response = await http.get(
-        Uri.parse('http://192.168.1.17:8000/api/rapport-maintenance/demande/${widget.demande['id']}'),
+        Uri.parse('http://192.168.1.11:8000/api/rapport-maintenance/demande/${widget.demande['id']}'),
         headers: {
           'Accept': 'application/json',
-          'Authorization': 'Bearer $token',
+
         },
       );
 
@@ -85,8 +85,8 @@ class _RapportMaintenancePageState extends State<RapportMaintenancePage> {
       final technicienId = userData['id'];
 
       final url = _rapportExists
-          ? 'http://192.168.1.17:8000/api/rapport-maintenance/${_existingRapport!['id']}'
-          : 'http://192.168.1.17:8000/api/rapport-maintenance';
+          ? 'http://192.168.1.11:8000/api/rapport-maintenance/${_existingRapport!['id']}'
+          : 'http://192.168.1.11:8000/api/rapport-maintenance';
 
       final headers = {
         'Content-Type': 'application/json',
@@ -137,7 +137,7 @@ class _RapportMaintenancePageState extends State<RapportMaintenancePage> {
 
     try {
       final token = await _storage.read(key: 'auth_token');
-      final pdfUrl = 'http://192.168.1.17:8000/api/rapport-maintenance/${_existingRapport!['id']}/download';
+      final pdfUrl = 'http://192.168.1.11:8000/api/rapport-maintenance/${_existingRapport!['id']}/download';
 
       if (await canLaunch(pdfUrl)) {
         await launch(
@@ -176,7 +176,7 @@ class _RapportMaintenancePageState extends State<RapportMaintenancePage> {
             fontSize: 20,
           ),
         ),
-        backgroundColor: const Color(0xFF4A6BFF),
+        backgroundColor: Colors.blueGrey,
         elevation: 0,
         centerTitle: true,
         iconTheme: const IconThemeData(color: Colors.white),
@@ -355,7 +355,7 @@ class _RapportMaintenancePageState extends State<RapportMaintenancePage> {
                     onPressed: _downloadRapport,
                     style: ElevatedButton.styleFrom(
                       foregroundColor: Colors.white,
-                      backgroundColor: const Color(0xFF4A6BFF),
+                      backgroundColor: Colors.blueGrey,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),

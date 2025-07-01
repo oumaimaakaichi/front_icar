@@ -14,24 +14,45 @@ class DemandesTechnicienPage extends StatefulWidget {
   _TechnicienDemandesPageState createState() => _TechnicienDemandesPageState();
 }
 
-class _TechnicienDemandesPageState extends State<DemandesTechnicienPage> {
+class _TechnicienDemandesPageState extends State<DemandesTechnicienPage>
+    with TickerProviderStateMixin {
   final _storage = const FlutterSecureStorage();
   List<dynamic> _demandes = [];
   bool _isLoading = true;
   String? _errorMessage;
-  Map<int, dynamic> _rapportsCache = {}; // Cache pour stocker les rapports
+  Map<int, dynamic> _rapportsCache = {};
+  late AnimationController _animationController;
+  Animation<double>? _fadeAnimation; // Made nullable and will be initialized properly
+  String _selectedFilter = 'Toutes';
 
   @override
   void initState() {
     super.initState();
+    _initializeAnimations();
     _fetchDemandes();
+  }
+
+  void _initializeAnimations() {
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
   }
 
   Future<void> _fetchRapportForDemande(int demandeId) async {
     try {
       final token = await _storage.read(key: 'auth_token');
       final response = await http.get(
-        Uri.parse('http://192.168.1.17:8000/api/rapport-maintenance/demande/$demandeId'),
+        Uri.parse('http://192.168.1.11:8000/api/rapport-maintenance/demande/$demandeId'),
         headers: {
           'Accept': 'application/json',
         },
@@ -39,9 +60,11 @@ class _TechnicienDemandesPageState extends State<DemandesTechnicienPage> {
 
       if (response.statusCode == 200) {
         final rapport = jsonDecode(response.body);
-        setState(() {
-          _rapportsCache[demandeId] = rapport;
-        });
+        if (mounted) {
+          setState(() {
+            _rapportsCache[demandeId] = rapport;
+          });
+        }
       } else if (response.statusCode != 404) {
         throw Exception('Erreur lors du chargement du rapport');
       }
@@ -51,6 +74,13 @@ class _TechnicienDemandesPageState extends State<DemandesTechnicienPage> {
   }
 
   Future<void> _fetchDemandes() async {
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
+    }
+
     try {
       final token = await _storage.read(key: 'auth_token');
       final userDataJson = await _storage.read(key: 'user_data');
@@ -58,7 +88,7 @@ class _TechnicienDemandesPageState extends State<DemandesTechnicienPage> {
       final technicienId = userData['id'];
 
       final response = await http.get(
-        Uri.parse('http://192.168.1.17:8000/api/demandes/technicien/$technicienId'),
+        Uri.parse('http://192.168.1.11:8000/api/demandes/technicien/$technicienId'),
         headers: {
           'Accept': 'application/json',
           'Authorization': 'Bearer $token',
@@ -68,36 +98,47 @@ class _TechnicienDemandesPageState extends State<DemandesTechnicienPage> {
       if (response.statusCode == 200) {
         final demandes = jsonDecode(response.body);
 
-        // Pour chaque demande, vérifier s'il y a un rapport
         for (var demande in demandes) {
           if (demande['id'] != null) {
             await _fetchRapportForDemande(demande['id']);
           }
         }
 
-        setState(() {
-          _demandes = demandes;
-          _isLoading = false;
-        });
+        if (mounted) {
+          setState(() {
+            _demandes = demandes;
+            _isLoading = false;
+          });
+          _animationController.forward();
+        }
       } else {
+        if (mounted) {
+          setState(() {
+            _errorMessage = 'Erreur lors du chargement des demandes';
+            _isLoading = false;
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
         setState(() {
-          _errorMessage = 'Erreur lors du chargement des demandes';
+          _errorMessage = 'Erreur de connexion: $e';
           _isLoading = false;
         });
       }
-    } catch (e) {
-      setState(() {
-        _errorMessage = 'Erreur de connexion: $e';
-        _isLoading = false;
-      });
     }
+  }
+
+  List<dynamic> get _filteredDemandes {
+    if (_selectedFilter == 'Toutes') return _demandes;
+    return _demandes.where((d) => d['status']?.toLowerCase() == _selectedFilter.toLowerCase()).toList();
   }
 
   Future<void> _showPiecesDialog(BuildContext context, List<dynamic> pieces) async {
     try {
       final token = await _storage.read(key: 'auth_token');
       final response = await http.get(
-        Uri.parse('http://192.168.1.17:8000/api/catalogues'),
+        Uri.parse('http://192.168.1.11:8000/api/catalogues'),
         headers: {
           'Accept': 'application/json',
           'Authorization': 'Bearer $token',
@@ -110,48 +151,149 @@ class _TechnicienDemandesPageState extends State<DemandesTechnicienPage> {
 
       final catalogues = jsonDecode(response.body);
 
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Détails des pièces'),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: pieces.length,
-              itemBuilder: (context, index) {
-                final piece = pieces[index];
-                final catalogueMatch = catalogues.firstWhere(
-                      (c) => c['id'] == piece['piece_id'],
-                  orElse: () => null,
-                );
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => Dialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            child: Container(
+              constraints: const BoxConstraints(maxHeight: 500),
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1A73E8).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(
+                          Icons.build_circle_outlined,
+                          color: Color(0xFF1A73E8),
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      const Expanded(
+                        child: Text(
+                          'Pièces requises',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF2D3748),
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.close, color: Colors.grey),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  Flexible(
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      itemCount: pieces.length,
+                      separatorBuilder: (context, index) => const Divider(height: 1),
+                      itemBuilder: (context, index) {
+                        final piece = pieces[index];
+                        final catalogueMatch = catalogues.firstWhere(
+                              (c) => c['id'] == piece['piece_id'],
+                          orElse: () => null,
+                        );
 
-                final nomPiece = catalogueMatch != null
-                    ? catalogueMatch['nom_piece']
-                    : piece['nom_piece'] ?? 'Pièce ${index + 1}';
+                        final nomPiece = catalogueMatch != null
+                            ? catalogueMatch['nom_piece']
+                            : piece['nom_piece'] ?? 'Pièce ${index + 1}';
 
-                return ListTile(
-                  title: Text(nomPiece),
-                  subtitle: Text('Type: ${piece['type'] ?? 'Inconnu'}'),
-                  trailing: Text('${piece['prix'] ?? '0'} €'),
-                );
-              },
+                        return Container(
+                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 8,
+                                height: 8,
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFF1A73E8),
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      nomPiece,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 16,
+                                        color: Color(0xFF2D3748),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Type: ${piece['type'] ?? 'Inconnu'}',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.grey.shade600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: Colors.green.shade50,
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(color: Colors.green.shade200),
+                                ),
+                                child: Text(
+                                  '${piece['prix'] ?? '0'} €',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.green.shade700,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Fermer'),
-            ),
-          ],
-        ),
-      );
+        );
+      }
     } catch (e) {
+      if (mounted) {
+        _showErrorDialog(context, 'Impossible de charger les détails des pièces : $e');
+      }
+    }
+  }
+
+  void _showErrorDialog(BuildContext context, String message) {
+    if (mounted) {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Erreur'),
-          content: Text('Impossible de charger les détails des pièces : $e'),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Row(
+            children: [
+              Icon(Icons.error_outline, color: Colors.red.shade600),
+              const SizedBox(width: 8),
+              const Text('Erreur'),
+            ],
+          ),
+          content: Text(message),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -166,46 +308,101 @@ class _TechnicienDemandesPageState extends State<DemandesTechnicienPage> {
   Widget _buildStatusBadge(String status) {
     Color backgroundColor;
     Color textColor;
+    IconData icon;
 
     switch (status.toLowerCase()) {
       case 'assignée':
-        backgroundColor = Colors.blue.shade100;
-        textColor = Colors.blue.shade800;
+        backgroundColor = Colors.blue.shade50;
+        textColor = Colors.blue.shade700;
+        icon = Icons.assignment_outlined;
         break;
       case 'en cours':
-        backgroundColor = Colors.orange.shade100;
-        textColor = Colors.orange.shade800;
+        backgroundColor = Colors.orange.shade50;
+        textColor = Colors.orange.shade700;
+        icon = Icons.work_outline;
         break;
       case 'terminée':
-        backgroundColor = Colors.green.shade100;
-        textColor = Colors.green.shade800;
+        backgroundColor = Colors.green.shade50;
+        textColor = Colors.green.shade700;
+        icon = Icons.check_circle_outline;
         break;
       default:
-        backgroundColor = Colors.grey.shade200;
-        textColor = Colors.grey.shade800;
+        backgroundColor = Colors.grey.shade100;
+        textColor = Colors.grey.shade700;
+        icon = Icons.help_outline;
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: backgroundColor,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(25),
+        border: Border.all(color: textColor.withOpacity(0.3)),
       ),
-      child: Text(
-        status,
-        style: TextStyle(
-          color: textColor,
-          fontWeight: FontWeight.bold,
-          fontSize: 12,
-        ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: textColor),
+          const SizedBox(width: 6),
+          Text(
+            status,
+            style: TextStyle(
+              color: textColor,
+              fontWeight: FontWeight.w600,
+              fontSize: 12,
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildDemandeCard(Map<String, dynamic> demande) {
-    final dateFormat = DateFormat('dd/MM/yyyy');
-    final timeFormat = DateFormat('HH:mm');
+  Widget _buildFilterChips() {
+    final filters = ['Toutes', 'Assignée', 'En cours', 'Terminée'];
 
+    return Container(
+      height: 50,
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: filters.length,
+        itemBuilder: (context, index) {
+          final filter = filters[index];
+          final isSelected = _selectedFilter == filter;
+
+          return Container(
+            margin: const EdgeInsets.only(right: 12),
+            child: FilterChip(
+              label: Text(filter),
+              selected: isSelected,
+              onSelected: (selected) {
+                if (mounted) {
+                  setState(() {
+                    _selectedFilter = filter;
+                  });
+                }
+              },
+              backgroundColor: Colors.white,
+              selectedColor: const Color(0xFF1A73E8).withOpacity(0.1),
+              labelStyle: TextStyle(
+                color: isSelected ? const Color(0xFF1A73E8) : Colors.grey.shade600,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+              ),
+              side: BorderSide(
+                color: isSelected ? const Color(0xFF1A73E8) : Colors.grey.shade300,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(25),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildDemandeCard(Map<String, dynamic> demande, int index) {
+    final dateFormat = DateFormat('dd/MM/yyyy');
     DateTime? dateMaintenance;
     if (demande['date_maintenance'] != null) {
       dateMaintenance = DateTime.parse(demande['date_maintenance']);
@@ -213,223 +410,214 @@ class _TechnicienDemandesPageState extends State<DemandesTechnicienPage> {
 
     final hasRapport = _rapportsCache.containsKey(demande['id']);
 
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      elevation: 2,
-      color: Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: () {},
-        splashColor: Colors.blueGrey.withOpacity(0.1),
-        highlightColor: Colors.transparent,
-        child: Container(
-          decoration: BoxDecoration(
-            border: Border(
-              left: BorderSide(
-                width: 4,
-                color: Colors.blue,
-              ),
-            ),
+    // Check if animation is ready before using it
+    if (_fadeAnimation == null) {
+      return Container(); // Return empty container if animation not ready
+    }
+
+    return FadeTransition(
+      opacity: _fadeAnimation!,
+      child: SlideTransition(
+        position: Tween<Offset>(
+          begin: const Offset(0, 0.5),
+          end: Offset.zero,
+        ).animate(CurvedAnimation(
+          parent: _animationController,
+          curve: Interval(
+            (index * 0.1).clamp(0.0, 1.0),
+            ((index * 0.1) + 0.5).clamp(0.0, 1.0),
+            curve: Curves.easeOutCubic,
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        )),
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.08),
+                blurRadius: 20,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(20),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => DemandeDetailPage(demande: demande),
+                  ),
+                );
+              },
+              child: Container(
+                padding: const EdgeInsets.all(24),
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Text(
-                        demande['service']['titre'] ?? 'Service non spécifié',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.blueGrey,
+                    // Header avec titre et statut
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                demande['service']['titre'] ?? 'Service non spécifié',
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF2D3748),
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 8),
+
+                            ],
+                          ),
                         ),
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 2,
-                      ),
+                        const SizedBox(width: 12),
+                        _buildStatusBadge(demande['status'] ?? 'Non spécifié'),
+                      ],
                     ),
-                    const SizedBox(width: 8),
-                    _buildStatusBadge(demande['status'] ?? 'Non spécifié'),
-                  ],
-                ),
 
-                const SizedBox(height: 16),
+                    const SizedBox(height: 24),
 
-                _buildInfoSection(
-                  icon: Icons.person_outline,
-                  title: 'Client',
-                  content: '${demande['client']['prenom']} ${demande['client']['nom']}\n'
-                      'Tél: ${demande['client']['phone']}',
-                ),
-
-                const Divider(height: 24, thickness: 1, color: Colors.grey),
-
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(
-                      Icons.calendar_today_outlined,
-                      size: 20,
-                      color: Colors.blueGrey[400],
+                    // Informations client
+                    _buildInfoRow(
+                      icon: Icons.person_outline,
+                      iconColor: Colors.blue.shade600,
+                      title: 'Client',
+                      content: '${demande['client']['prenom']} ${demande['client']['nom']}',
+                      subtitle: 'Tél: ${demande['client']['phone']}',
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'INTERVENTION',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w500,
-                              fontSize: 12,
-                              color: Colors.blueGrey[300],
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            dateMaintenance != null
-                                ? '${dateFormat.format(dateMaintenance)} à ${demande['heure_maintenance']}'
-                                : 'Date non spécifiée',
-                            style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Type: ${demande['type_emplacement']}',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey.shade600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
 
-                if (demande['pieces_choisies'] != null && demande['pieces_choisies'].isNotEmpty) ...[
-                  const Divider(height: 24, thickness: 1, color: Colors.grey),
-                  Row(
-                    children: [
-                      Text(
-                        'PIÈCES À UTILISER',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w500,
-                          fontSize: 12,
-                          color: Colors.blueGrey[300],
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                      const Spacer(),
-                      TextButton(
-                        onPressed: () => _showPiecesDialog(context, demande['pieces_choisies']),
-                        style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          minimumSize: Size.zero,
+                    const SizedBox(height: 20),
+
+                    // Informations intervention
+                    _buildInfoRow(
+                      icon: Icons.calendar_today_outlined,
+                      iconColor: Colors.orange.shade600,
+                      title: 'Intervention',
+                      content: dateMaintenance != null
+                          ? '${dateFormat.format(dateMaintenance)} à ${demande['heure_maintenance']}'
+                          : 'Date non spécifiée',
+                      subtitle: 'Type: ${demande['type_emplacement']}',
+                    ),
+
+                    // Pièces si disponibles
+                    if (demande['pieces_choisies'] != null && demande['pieces_choisies'].isNotEmpty) ...[
+                      const SizedBox(height: 20),
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade50,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.grey.shade200),
                         ),
                         child: Row(
                           children: [
-                            Text(
-                              'Détails',
-                              style: TextStyle(
-                                color: Colors.blueGrey[600],
-                                fontWeight: FontWeight.w500,
+                            Icon(
+                              Icons.build_circle_outlined,
+                              color: Colors.green.shade600,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                '${demande['pieces_choisies'].length} pièce(s) requise(s)',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF2D3748),
+                                ),
                               ),
                             ),
-                            const SizedBox(width: 4),
-                            Icon(
-                              Icons.chevron_right,
-                              size: 18,
-                              color: Colors.blueGrey[600],
+                            TextButton.icon(
+                              onPressed: () => _showPiecesDialog(context, demande['pieces_choisies']),
+                              icon: const Icon(Icons.visibility_outlined, size: 16),
+                              label: const Text('Voir'),
+                              style: TextButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                minimumSize: Size.zero,
+                              ),
                             ),
                           ],
                         ),
                       ),
                     ],
-                  ),
-                  const SizedBox(height: 4),
-                ],
 
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        icon: Icon(Icons.visibility_outlined, size: 18, color: Colors.blueGrey[600]),
-                        label: Text(
-                          'Détails',
-                          style: TextStyle(color: Colors.blueGrey[600]),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          side: BorderSide(color: Colors.blueGrey.shade300),
-                        ),
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => DemandeDetailPage(demande: demande),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        icon: Icon(
-                          hasRapport ? Icons.description : Icons.edit_document,
-                          size: 18,
-                          color: Colors.white,
-                        ),
-                        label: Text(
-                          hasRapport ? 'Voir rapport' : 'Créer rapport',
-                          style: const TextStyle(color: Colors.white),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          backgroundColor: hasRapport ? Colors.green : Colors.blueAccent,
-                        ),
-                        onPressed: () async {
-                          final result = await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => hasRapport
-                                  ? RapportMaintenancePage(
-                                demande: demande,
-                               
-                              )
-                                  : AjoutRapportPage(demande: demande),
-                            ),
-                          );
+                    const SizedBox(height: 24),
 
-                          if (result == true) {
-                            await _fetchRapportForDemande(demande['id']);
-                            _fetchDemandes();
-                          }
-                        },
-                      ),
+                    // Boutons d'action
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            icon: const Icon(Icons.visibility_outlined, size: 18),
+                            label: const Text('Détails'),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              side: BorderSide(color: Colors.grey.shade400),
+                              foregroundColor: Colors.grey.shade700,
+                            ),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => DemandeDetailPage(demande: demande),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            icon: Icon(
+                              hasRapport ? Icons.description_outlined : Icons.edit_document,
+                              size: 18,
+                            ),
+                            label: Text(hasRapport ? 'Voir rapport' : 'Créer rapport'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: hasRapport ? Colors.green.shade600 : const Color(0xFF1A73E8),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              elevation: 0,
+                            ),
+                            onPressed: () async {
+                              final result = await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => hasRapport
+                                      ? RapportMaintenancePage(demande: demande)
+                                      : AjoutRapportPage(demande: demande),
+                                ),
+                              );
+
+                              if (result == true && mounted) {
+                                await _fetchRapportForDemande(demande['id']);
+                                _fetchDemandes();
+                              }
+                            },
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
+              ),
             ),
           ),
         ),
@@ -437,37 +625,57 @@ class _TechnicienDemandesPageState extends State<DemandesTechnicienPage> {
     );
   }
 
-  Widget _buildInfoSection({
+  Widget _buildInfoRow({
     required IconData icon,
+    required Color iconColor,
     required String title,
     required String content,
+    String? subtitle,
   }) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(
-          icon,
-          size: 20,
-          color: Colors.grey.shade600,
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: iconColor.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, size: 20, color: iconColor),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 16),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                title,
+                title.toUpperCase(),
                 style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
                   color: Colors.grey.shade600,
+                  letterSpacing: 0.8,
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 6),
               Text(
                 content,
-                style: const TextStyle(fontSize: 15),
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF2D3748),
+                ),
               ),
+              if (subtitle != null) ...[
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+              ],
             ],
           ),
         ),
@@ -475,88 +683,169 @@ class _TechnicienDemandesPageState extends State<DemandesTechnicienPage> {
     );
   }
 
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade100,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.assignment_outlined,
+              size: 64,
+              color: Colors.grey.shade400,
+            ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            _selectedFilter == 'Toutes'
+                ? 'Aucune intervention assignée'
+                : 'Aucune intervention ${_selectedFilter.toLowerCase()}',
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF2D3748),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            _selectedFilter == 'Toutes'
+                ? 'Vous n\'avez aucune intervention programmée pour le moment'
+                : 'Aucune intervention avec ce statut n\'est disponible',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey.shade600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _refreshData() {
+    if (mounted) {
+      _animationController.reset();
+      _fetchDemandes();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
-        title: const Text('Mes Interventions', style: TextStyle(
-          color: Colors.white,
-          fontFamily: 'Roboto',
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-        )),
-        backgroundColor:  Color(0xFF6C5CE7),
+        title: const Text(
+          'Mes Interventions',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: Color(0xFF73B1BD),
+        elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
         centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh_rounded),
             tooltip: 'Rafraîchir',
-            onPressed: _fetchDemandes,
+            onPressed: _refreshData,
           ),
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF1A73E8)),
+        ),
+      )
           : _errorMessage != null
           ? Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline, size: 48, color: Colors.red),
-            const SizedBox(height: 16),
-            Text(
-              _errorMessage!,
-              style: const TextStyle(fontSize: 16),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _fetchDemandes,
-              child: const Text('Réessayer'),
-            ),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.error_outline,
+                  size: 48,
+                  color: Colors.red.shade600,
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'Oups ! Une erreur s\'est produite',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF2D3748),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                _errorMessage!,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey.shade600,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 32),
+              ElevatedButton.icon(
+                onPressed: _refreshData,
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text('Réessayer'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF1A73E8),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 16,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       )
-          : _demandes.isEmpty
-          ? Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Image.asset(
-              'assets/images/empty.png',
-              height: 150,
-              width: 150,
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Aucune intervention assignée',
-              style: TextStyle(
-                fontSize: 18,
-                color: Colors.grey,
+          : Column(
+        children: [
+          const SizedBox(height: 16),
+          _buildFilterChips(),
+          const SizedBox(height: 16),
+          Expanded(
+            child: _filteredDemandes.isEmpty
+                ? _buildEmptyState()
+                : RefreshIndicator(
+              onRefresh: () async {
+                _refreshData();
+              },
+              color: const Color(0xFF1A73E8),
+              child: ListView.builder(
+                padding: const EdgeInsets.only(bottom: 32),
+                itemCount: _filteredDemandes.length,
+                itemBuilder: (context, index) {
+                  return _buildDemandeCard(_filteredDemandes[index], index);
+                },
               ),
             ),
-            const SizedBox(height: 8),
-            const Text(
-              'Vous n\'avez aucune intervention programmée pour le moment',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey,
-              ),
-            ),
-          ],
-        ),
-      )
-          : RefreshIndicator(
-        onRefresh: _fetchDemandes,
-        child: ListView.builder(
-          padding: const EdgeInsets.only(top: 8, bottom: 16),
-          itemCount: _demandes.length,
-          itemBuilder: (context, index) {
-            return _buildDemandeCard(_demandes[index]);
-          },
-        ),
+          ),
+        ],
       ),
     );
   }

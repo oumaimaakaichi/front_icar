@@ -87,7 +87,7 @@ class _MesDemandesPageState extends State<MesDemandesPage> with TickerProviderSt
 
     try {
       final response = await http.get(
-        Uri.parse('http://192.168.1.17:8000/api/demandes/$_userId'),
+        Uri.parse('http://192.168.1.11:8000/api/demandes/$_userId'),
         headers: {
           'Accept': 'application/json',
         },
@@ -163,37 +163,49 @@ class _MesDemandesPageState extends State<MesDemandesPage> with TickerProviderSt
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text(
-          'Mes Demandes',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
-            fontSize: 20,
-          ),
-        ),
-        backgroundColor: const Color(0xFF6797A2),
+        automaticallyImplyLeading: true,
+        toolbarHeight: 70,
+        backgroundColor: Colors.transparent,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
         flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
               colors: [Color(0xFF6797A2), Color(0xFF5A8A96)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
+            borderRadius: const BorderRadius.only(
+              bottomLeft: Radius.circular(20),
+              bottomRight: Radius.circular(20),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.15),
+                offset: const Offset(0, 4),
+                blurRadius: 10,
+              ),
+            ],
           ),
         ),
-        actions: [
-          Container(
-            margin: const EdgeInsets.only(right: 12),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(12),
+        title: const Padding(
+          padding: EdgeInsets.only(left: 8.0),
+          child: Text(
+            'Mes Demandes',
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w700,
+              fontSize: 22,
+              letterSpacing: 0.5,
             ),
-            child: IconButton(
-              icon: const Icon(Icons.handyman_outlined),
-              tooltip: 'Demandes avec technicien',
-              onPressed: () {
+          ),
+        ),
+        iconTheme: const IconThemeData(color: Colors.white),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 12.0),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: () {
                 if (_userId != null) {
                   Navigator.push(
                     context,
@@ -212,10 +224,19 @@ class _MesDemandesPageState extends State<MesDemandesPage> with TickerProviderSt
                   );
                 }
               },
+              child: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.handyman_outlined, color: Colors.white),
+              ),
             ),
           ),
         ],
       ),
+
       drawer: Drawer(
         width: MediaQuery.of(context).size.width * 0.8,
         shape: const RoundedRectangleBorder(
@@ -232,7 +253,7 @@ class _MesDemandesPageState extends State<MesDemandesPage> with TickerProviderSt
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [primaryColor, secondaryColor, secondaryColor],
+                  colors: [primaryColor, primaryColor, primaryColor],
                 ),
                 borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(30),
@@ -486,14 +507,14 @@ class _MesDemandesPageState extends State<MesDemandesPage> with TickerProviderSt
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Colors.teal, Colors.grey],
+          colors: [Colors.blue, Colors.blueAccent],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF6797A2).withOpacity(0.3),
+            color: const Color(0xFF1E8FA9).withOpacity(0.3),
             blurRadius: 12,
             offset: const Offset(0, 6),
           ),
@@ -825,14 +846,14 @@ class _MesDemandesPageState extends State<MesDemandesPage> with TickerProviderSt
       return Container(
         decoration: BoxDecoration(
           gradient: const LinearGradient(
-            colors: [Color(0xFF6797A2), Color(0xFF5A8A96)],
+            colors: [Colors.blue, Colors.blue],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF6797A2).withOpacity(0.3),
+              color: const Color(0x2ED3F8FF).withOpacity(0.3),
               blurRadius: 8,
               offset: const Offset(0, 4),
             ),
@@ -887,7 +908,7 @@ class ConfirmationPage extends StatelessWidget {
 
   Future<Map<String, dynamic>> _fetchDemandeDetails() async {
     final response = await http.get(
-      Uri.parse('http://192.168.1.17:8000/api/demandes/$demandeId/confirmation-details'),
+      Uri.parse('http://192.168.1.11:8000/api/demandes/$demandeId/confirmation-details'),
     );
 
     if (response.statusCode == 200) {

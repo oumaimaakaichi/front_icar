@@ -51,7 +51,7 @@ class _MobileMaintenanceFlowState extends State<MobileMaintenanceFlow> {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'Maintenance Mobile',
+          'Maintenance a domicile',
           style: TextStyle(color: Colors.white),
         ),
         centerTitle: true,
@@ -829,7 +829,7 @@ class _MobileMaintenanceFlowState extends State<MobileMaintenanceFlow> {
       }
 
       final response = await http.put(
-        Uri.parse('http://192.168.1.17:8000/api/demandes/${widget.demandeId}/update-location'),
+        Uri.parse('http://192.168.1.11:8000/api/demandes/${widget.demandeId}/update-location'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(requestData),
       );

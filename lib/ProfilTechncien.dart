@@ -5,6 +5,7 @@ import 'package:car_mobile/Client/homeClient.dart';
 import 'package:car_mobile/TechnicienDemandesPage.dart';
 
 import 'package:car_mobile/login.dart';
+import 'package:car_mobile/settings_page.dart';
 import 'package:car_mobile/user_home.dart';
 
 import 'package:flutter/material.dart';
@@ -80,9 +81,377 @@ class _ProfileTechPageState extends State<ProfileTechPage> {
       minLeadingWidth: 20,
     );
   }
+  Widget _buildModernMenuItem({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+    bool isSelected = false,
+    bool isLogout = false,
+  }) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 3),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(15),
+        color: isSelected ? Colors.blueGrey.withOpacity(0.1) : Colors.transparent,
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+        leading: Container(
+          width: 45,
+          height: 45,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            color: isLogout
+                ? Colors.red.withOpacity(0.1)
+                : isSelected
+                ? Colors.blueGrey.withOpacity(0.15)
+                : Colors.grey.withOpacity(0.1),
+          ),
+          child: Icon(
+            icon,
+            color: isLogout
+                ? Colors.red
+                : isSelected
+                ? Colors.blueGrey
+                : Colors.grey.shade600,
+            size: 22,
+          ),
+        ),
+        title: Text(
+          title,
+          style: TextStyle(
+            color: isLogout ? Colors.red : Colors.grey.shade800,
+            fontSize: 16,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+          ),
+        ),
+        subtitle: Text(
+          subtitle,
+          style: TextStyle(
+            color: Colors.grey.shade500,
+            fontSize: 12,
+          ),
+        ),
+        trailing: isSelected
+            ? Container(
+          width: 4,
+          height: 20,
+          decoration: BoxDecoration(
+            color: Colors.blueGrey,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        )
+            : Icon(
+          Icons.arrow_forward_ios_rounded,
+          color: Colors.grey.shade400,
+          size: 16,
+        ),
+        onTap: onTap,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15),
+        ),
+      ),
+    );
+  }
+  Widget _buildDrawer(ThemeData theme, Color primaryColor) {
+    return Drawer(
+      width: MediaQuery.of(context).size.width * 0.8,
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Colors.white,
+              Colors.grey.shade50,
+            ],
+          ),
+        ),
+        child: Column(
+          children: [
+            // Header avec design moderne
+            Container(
+              height: 280,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    primaryColor,
+                    primaryColor,
+                    primaryColor,
+                  ],
+                ),
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(30),
+                  bottomRight: Radius.circular(30),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: primaryColor.withOpacity(0.3),
+                    blurRadius: 20,
+                    spreadRadius: 0,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: Stack(
+                children: [
+                  // Pattern d'arrière-plan
+                  Positioned.fill(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: const BorderRadius.only(
+                          bottomLeft: Radius.circular(30),
+                          bottomRight: Radius.circular(30),
+                        ),
+                        image: DecorationImage(
+                          image: NetworkImage(
+                            'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMSIgZmlsbD0id2hpdGUiIGZpbGwtb3BhY2l0eT0iMC4xIi8+Cjwvc3ZnPgo=',
+                          ),
+                          repeat: ImageRepeat.repeat,
+                          opacity: 0.1,
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Contenu du header
+                  Padding(
+                    padding: const EdgeInsets.all(25),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const SizedBox(height: 5),
+                        // Photo de profil avec design moderne
+                        Container(
+                          width: 70,
+                          height: 70,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: Colors.white,
+                              width: 4,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.2),
+                                blurRadius: 20,
+                                spreadRadius: 0,
+                                offset: const Offset(0, 10),
+                              ),
+                            ],
+                          ),
+                          child: ClipOval(
+                            child: Image.asset(
+                              'assets/images/profile.png',
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 5),
+                        // Nom et prénom
+                        Text(
+                          '$_prenom $_nom',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 5),
+                        // Badge premium
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.3),
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.verified,
+                                color: Colors.white,
+                                size: 16,
+                              ),
+                              const SizedBox(width: 5),
+                              Text(
+                                'Technicien Premium',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        // Statistiques rapides
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            _buildQuickStat('24', 'Interventions', Icons.build),
+                            Container(
+                              height: 30,
+                              width: 1,
+                              color: Colors.white.withOpacity(0.3),
+                            ),
+                            _buildQuickStat('18', 'Terminées', Icons.check_circle),
+                            Container(
+                              height: 30,
+                              width: 1,
+                              color: Colors.white.withOpacity(0.3),
+                            ),
+                            _buildQuickStat('4', 'En cours', Icons.access_time),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Menu items avec design moderne
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.symmetric(vertical: 15),
+                children: [
+                  _buildModernMenuItem(
+                    icon: Icons.home_rounded,
+                    title: 'Accueil',
+                    subtitle: 'Dashboard principal',
+
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const UserHomePage()),
+                      );
+                    },
+                  ),
+                  _buildModernMenuItem(
+                    icon: Icons.assignment_rounded,
+                    title: 'Mes interventions',
+                    subtitle: 'Gérer vos tâches',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const DemandesTechnicienPage()),
+                      );
+                    },
+                  ),
+
+                  _buildModernMenuItem(
+                    icon: Icons.person_rounded,
+                    title: 'Mon profil',
+                    subtitle: 'Informations personnelles',
+                    isSelected: true,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => ProfileTechPage()),
+                      );
+                    },
+                  ),
+                  _buildModernMenuItem(
+                    icon: Icons.settings_rounded,
+                    title: 'Paramètres',
+                    subtitle: 'Configuration',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const SettingsPage()),
+                      );
+                    },
+                  ),
+
+                  // Separateur
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    child: Divider(
+                      color: Colors.grey.shade300,
+                      thickness: 1,
+                    ),
+                  ),
+
+                  _buildModernMenuItem(
+                    icon: Icons.logout_rounded,
+                    title: 'Déconnexion',
+                    subtitle: 'Quitter l\'application',
+                    isLogout: true,
+                    onTap: () {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(builder: (context) => LoginPage()),
+                      );
+                    },
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // Footer avec version
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Text(
+                      'Version 1.0.0',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.grey.shade500,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+  Widget _buildQuickStat(String value, String label, IconData icon) {
+    return Column(
+      children: [
+        Icon(
+          icon,
+          color: Colors.white,
+          size: 16,
+        ),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        Text(
+          label,
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.8),
+            fontSize: 10,
+          ),
+        ),
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    const primaryColor = Color(0xFF73B1BD); // Changé vers blueGrey
+    const secondaryColor = Color(0x81B4CBFF); // Bleu clair
+    const accentColor = Color(0xD585A0FF);
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -94,186 +463,10 @@ class _ProfileTechPageState extends State<ProfileTechPage> {
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor:  Color(0xFF6C5CE7),
+        backgroundColor: Color(0xFF73B1BD),
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      drawer: Drawer(
-        width: MediaQuery.of(context).size.width * 0.8,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.horizontal(
-            right: Radius.circular(20),
-          ),
-        ),
-        child: Column(
-          children: [
-            // Header avec image de fond
-            Container(
-              height: 220,
-              decoration: BoxDecoration(
-                color:  Color(0xFF6C5CE7),
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(20),
-                  bottomRight: Radius.circular(20),
-                ),
-                image: const DecorationImage(
-                  image: AssetImage('assets/images/background_pattern.png'),
-                  fit: BoxFit.cover,
-                  colorFilter: ColorFilter.mode(
-                    Color(0xFF007896),
-                    BlendMode.dstATop,
-                  ),
-                ),
-              ),
-              child: InkWell(
-                onTap: () {
-                  Navigator.pop(context); // Close drawer if already on profile
-                },
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      // Photo de profil
-                      Container(
-                        width: 100,
-                        height: 100,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: Colors.white,
-                            width: 3,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              blurRadius: 10,
-                              spreadRadius: 2,
-                            ),
-                          ],
-                        ),
-                        child: ClipOval(
-                          child: Image.asset(
-                            'assets/images/profile.png',
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 15),
-                      Text(
-                        '$_prenom $_nom',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          shadows: [
-                            Shadow(
-                              blurRadius: 10,
-                              color: Colors.black26,
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 5),
-                      Text(
-                        _isActive ? 'Utilisateur Premium' : 'Utilisateur Standard',
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            // Liste des options
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.only(top: 10),
-                children: [
-                  _buildDrawerTile(
-                    context,
-                    icon: Icons.home,
-                    title: 'Acceuil',
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const UserHomePage()),
-                      );
-                    },
-                  ),
-                  _buildDrawerTile(
-                    context,
-                    icon: Icons.home,
-                    title: 'Mes interventions',
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const DemandesTechnicienPage()),
-                      );
-                    },
-                  ),
-                  _buildDrawerTile(
-                    context,
-                    icon: Icons.home,
-                    title: 'Assistance',
-                    onTap: () {
-
-                    },
-                  ),
-                  _buildDrawerTile(
-                    context,
-                    icon: Icons.account_circle,
-                    title: 'Profile',
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const ProfileTechPage()),
-                      );
-                    },
-                  ),
-                  _buildDrawerTile(
-                    context,
-                    icon: Icons.help_outline,
-                    title: 'Ticket assistance',
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const TicketAssistancePage()),
-                      );
-                    },
-                  ),
-
-
-
-                  const Divider(height: 20, indent: 20, endIndent: 20),
-                  _buildDrawerTile(
-                    context,
-                    icon: Icons.logout,
-                    title: 'Déconnexion',
-                    onTap: () {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(builder: (context) => LoginPage()),
-                      );
-                    },
-                  )
-                ],
-              ),
-            ),
-            // Footer
-            Padding(
-              padding: const EdgeInsets.all(15),
-              child: Text(
-                'Version 1.0.0',
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 12,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+      drawer: _buildDrawer(theme, primaryColor),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(

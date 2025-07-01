@@ -4,14 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ProblemDescriptionPage extends StatefulWidget {
-  final int categoryId;
-  final String categoryTitle;
+
+
   final int voitureId;
 
   const ProblemDescriptionPage({
     Key? key,
-    required this.categoryId,
-    required this.categoryTitle,
+
+
     required this.voitureId,
   }) : super(key: key);
 
@@ -71,7 +71,7 @@ class _ProblemDescriptionPageState extends State<ProblemDescriptionPage>
         context,
         MaterialPageRoute(
           builder: (context) => MaintenanceTypePagee(
-            categoryId: widget.categoryId,
+
             voitureId: widget.voitureId,
             clientId: int.parse(userId ?? '0'),
             problemDescription: _descriptionController.text,
@@ -172,14 +172,6 @@ class _ProblemDescriptionPageState extends State<ProblemDescriptionPage>
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              widget.categoryTitle,
-                              style: const TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
                             const SizedBox(height: 4),
                             Text(
                               'Diagnostic personnalisé',

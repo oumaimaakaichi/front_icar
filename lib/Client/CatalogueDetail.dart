@@ -20,7 +20,7 @@ class CatalogueDetailPage extends StatefulWidget {
 }
 
 class _CatalogueDetailPageState extends State<CatalogueDetailPage> {
-  static const String baseUrl = 'http://192.168.1.17:8000';
+  static const String baseUrl = 'http://192.168.1.11:8000';
   final _storage = const FlutterSecureStorage();
   int? _userId;
   int _quantity = 1;

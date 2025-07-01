@@ -17,7 +17,7 @@ class _PanierPageState extends State<PanierPage> with TickerProviderStateMixin {
   List<dynamic> _panierItems = [];
   bool _isLoading = true;
   String _error = '';
-  static const String baseUrl = 'http://192.168.1.17:8000';
+  static const String baseUrl = 'http://192.168.1.11:8000';
 
   late AnimationController _fadeController;
   late AnimationController _slideController;
@@ -939,13 +939,17 @@ class _PanierPageState extends State<PanierPage> with TickerProviderStateMixin {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                Color(0xFF4CA1A3),
-                Color(0xFF4CA1A3),
+                Color(0xFF6797A2),
+                Color(0xFF6797A2),
               ],
+
             ),
+
           ),
+
         ),
         elevation: 0,
+
         centerTitle: true,
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [

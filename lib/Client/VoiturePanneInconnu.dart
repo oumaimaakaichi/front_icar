@@ -1,5 +1,7 @@
 import 'package:car_mobile/Client/CategoryPanesPage.dart';
 import 'package:car_mobile/Client/CategoryPanne_inconnu.dart';
+import 'package:car_mobile/Client/description_probleme.dart';
+import 'package:car_mobile/DescriptionPannePage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -65,7 +67,7 @@ class _MesVoituresPageState extends State<VoiturePanneInconnu>
     final userData = jsonDecode(userDataJsons);
     try {
       final response = await http.get(
-        Uri.parse('http://192.168.1.17:8000/api/voitures/${userData["id"]}'),
+        Uri.parse('http://192.168.1.11:8000/api/voitures/${userData["id"]}'),
         headers: {'Accept': 'application/json'},
       );
 
@@ -563,8 +565,8 @@ class _MesVoituresPageState extends State<VoiturePanneInconnu>
       context,
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) =>
-            AllPannesInconnyCategory(
-              voitureModel: voiture['model'],
+            ProblemDescriptionPage(
+
               voitureId: voiture['id'],
             ),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {

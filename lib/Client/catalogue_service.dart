@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 
 
 class CatalogueService {
-  static const String baseUrl = 'http://localhost:8000/api';
+  static const String baseUrl = 'http://192.168.113.216:8000/api';
 
   Future<List<Catalogue>> fetchCatalogues() async {
     final response = await http.get(Uri.parse('$baseUrl/catalogues'));

@@ -138,7 +138,7 @@ class _UserHomePageState extends State<ClientHomePage> {
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [primaryColor, secondaryColor, secondaryColor],
+                  colors: [primaryColor, primaryColor, primaryColor],
                 ),
                 borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(30),
@@ -502,7 +502,7 @@ class _UserHomePageState extends State<ClientHomePage> {
               _buildQuickServiceButton(
                 icon: Icons.build,
                 label: 'Pièces',
-                color: Colors.orangeAccent,
+                color: Colors.blueAccent,
                 onTap: () {
                   Navigator.push(
                     context,
@@ -514,14 +514,14 @@ class _UserHomePageState extends State<ClientHomePage> {
               _buildQuickServiceButton(
                 icon: Icons.schedule,
                 label: 'RDV',
-                color: Colors.brown,
+                color: Colors.deepOrangeAccent,
                 onTap: () {},
               ),
               const SizedBox(width: 12),
               _buildQuickServiceButton(
                 icon: Icons.history,
                 label: 'Historique',
-                color: Colors.blueAccent,
+                color: Colors.lightGreen,
                 onTap: () {},
               ),
 

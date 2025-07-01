@@ -44,7 +44,7 @@ class _MaintenanceTypePageState extends State<MaintenanceTypePage> {
 
     try {
       final response = await http.get(
-        Uri.parse('http://192.168.1.17:8000/api/ateliers'),
+        Uri.parse('http://192.168.1.11:8000/api/ateliers'),
       );
 
       if (response.statusCode == 200) {
@@ -146,7 +146,7 @@ class _MaintenanceTypePageState extends State<MaintenanceTypePage> {
       final timeStr = _selectedTime!.format(context);
 
       final response = await http.put(
-        Uri.parse('http://192.168.1.17:8000/api/demandes/${widget.demandeId}/update-info'),
+        Uri.parse('http://192.168.1.11:8000/api/demandes/${widget.demandeId}/update-info'),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
@@ -195,10 +195,15 @@ class _MaintenanceTypePageState extends State<MaintenanceTypePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Place de Maintenance'),
+        title: const Text('Place de Maintenance' , style: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.w600,
+          fontSize: 20,
+        ),),
         centerTitle: true,
         elevation: 0,
-        backgroundColor: Colors.grey[200],
+        backgroundColor: Color(0xFF6797A2),
+        iconTheme: const IconThemeData(color: Colors.white),
         flexibleSpace: Container(
           decoration: BoxDecoration(
 
@@ -447,7 +452,7 @@ class _MaintenanceTypePageState extends State<MaintenanceTypePage> {
     child: Row(
     mainAxisSize: MainAxisSize.min,
     children: [
-    Icon(Icons.arrow_back, color: Color(0xFF6C63FF)),
+    Icon(Icons.arrow_back, color: Colors.black),
     SizedBox(width: 8),
     Text(
     _showTimePicker
@@ -458,7 +463,7 @@ class _MaintenanceTypePageState extends State<MaintenanceTypePage> {
     style: TextStyle(
     fontSize: 16,
     fontWeight: FontWeight.w500,
-    color: Color(0xFF6C63FF),
+    color: Colors.black,
     ),
     ),
     ],
@@ -494,10 +499,10 @@ class _MaintenanceTypePageState extends State<MaintenanceTypePage> {
               width: 50,
               height: 50,
               decoration: BoxDecoration(
-                color: Color(0xFF6C63FF).withOpacity(0.1),
+                color: Colors.blueGrey.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.car_repair, size: 24, color: Color(0xFF6C63FF)),
+              child: Icon(Icons.car_repair, size: 24, color: Colors.blueGrey),
             ),
             title: Text(
               atelier['nom_commercial'],
@@ -530,7 +535,7 @@ class _MaintenanceTypePageState extends State<MaintenanceTypePage> {
                   ),
               ],
             ),
-            trailing: Icon(Icons.chevron_right, color: Color(0xFF6C63FF)),
+            trailing: Icon(Icons.chevron_right, color: Colors.blueGrey),
             onTap: () => _selectAtelier(atelier),
           ),
         );
@@ -566,11 +571,11 @@ class _MaintenanceTypePageState extends State<MaintenanceTypePage> {
               },
               calendarStyle: CalendarStyle(
                 todayDecoration: BoxDecoration(
-                  color: Color(0xFF6C63FF).withOpacity(0.3),
+                  color: Colors.blueGrey.withOpacity(0.3),
                   shape: BoxShape.circle,
                 ),
                 selectedDecoration: BoxDecoration(
-                  color: Color(0xFF6C63FF),
+                  color: Colors.blueGrey,
                   shape: BoxShape.circle,
                 ),
                 weekendTextStyle: TextStyle(color: Colors.red),
@@ -861,7 +866,7 @@ class ConfirmationPage extends StatelessWidget {
 
   Future<List<dynamic>> _fetchCataloguePieces() async {
     final response = await http.get(
-      Uri.parse('http://192.168.1.17:8000/api/catalogues'),
+      Uri.parse('http://192.168.1.11:8000/api/catalogues'),
     );
 
     if (response.statusCode == 200) {
@@ -873,7 +878,7 @@ class ConfirmationPage extends StatelessWidget {
 
   Future<Map<String, dynamic>> _fetchDemandeDetails() async {
     final response = await http.get(
-      Uri.parse('http://192.168.1.17:8000/api/$demandeId/confirmation-details'),
+      Uri.parse('http://192.168.1.11:8000/api/$demandeId/confirmation-details'),
     );
 
     if (response.statusCode == 200) {
@@ -1216,7 +1221,7 @@ class ConfirmationPage extends StatelessWidget {
   Future<void> _showPiecesDialog(BuildContext context, List<dynamic> pieces) async {
     try {
       final response = await http.get(
-        Uri.parse('http://192.168.1.17:8000/api/catalogues'),
+        Uri.parse('http://192.168.1.11:8000/api/catalogues'),
         headers: {'Accept': 'application/json'},
       );
 

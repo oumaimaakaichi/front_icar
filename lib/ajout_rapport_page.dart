@@ -38,11 +38,10 @@ class _AjoutRapportPageState extends State<AjoutRapportPage> {
       final technicienId = userData['id'];
 
       final response = await http.post(
-        Uri.parse('http://192.168.1.17:8000/api/rapport-maintenance'),
+        Uri.parse('http://192.168.1.11:8000/api/rapport-maintenance'),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
-          'Authorization': 'Bearer $token',
         },
         body: jsonEncode({
           'id_technicien': technicienId,
@@ -100,7 +99,7 @@ class _AjoutRapportPageState extends State<AjoutRapportPage> {
             fontSize: 20,
           ),
         ),
-        backgroundColor: const Color(0xFF4A6BFF),
+        backgroundColor: Colors.blueGrey,
         elevation: 0,
         centerTitle: true,
         iconTheme: const IconThemeData(color: Colors.white),
@@ -340,7 +339,7 @@ class _AjoutRapportPageState extends State<AjoutRapportPage> {
                 child: ElevatedButton(
                   onPressed: _isSubmitting ? null : _submitRapport,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF4A6BFF),
+                    backgroundColor: Colors.blueGrey,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),

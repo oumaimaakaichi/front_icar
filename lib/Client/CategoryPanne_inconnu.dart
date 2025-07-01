@@ -65,7 +65,7 @@ class _AllPannesPageState extends State<AllPannesInconnyCategory>
 
     try {
       final response = await http.get(
-        Uri.parse('http://192.168.1.17:8000/api/category-panes'),
+        Uri.parse('http://192.168.1.11:8000/api/category-panes'),
         headers: {'Accept': 'application/json'},
       );
 
@@ -468,8 +468,8 @@ class _AllPannesPageState extends State<AllPannesInconnyCategory>
               context,
               MaterialPageRoute(
                 builder: (context) => ProblemDescriptionPage(
-                  categoryId: panne['id'],
-                  categoryTitle: panne['titre'],
+
+
                   voitureId: widget.voitureId,
                 ),
               ),

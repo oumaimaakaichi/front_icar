@@ -1,5 +1,7 @@
 import 'package:car_mobile/Client/CategoryPanesPage.dart';
+import 'package:car_mobile/Client/CategoryPanne_inconnu.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -11,30 +13,43 @@ class Voiture extends StatefulWidget {
   State<Voiture> createState() => _MesVoituresPageState();
 }
 
-class _MesVoituresPageState extends State<Voiture> with SingleTickerProviderStateMixin {
+class _MesVoituresPageState extends State<Voiture>
+    with TickerProviderStateMixin {
   final _storage = const FlutterSecureStorage();
   List<dynamic> _voitures = [];
   bool _isLoading = true;
   String _searchQuery = '';
   late AnimationController _animationController;
+  late AnimationController _searchController;
   late Animation<double> _fadeAnimation;
+  final FocusNode _searchFocusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
     _animationController = AnimationController(
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 1200),
       vsync: this,
     );
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    _searchController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
     );
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeInOut,
+    ));
     _fetchVoitures();
   }
 
   @override
   void dispose() {
     _animationController.dispose();
+    _searchController.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
   }
 
@@ -42,12 +57,15 @@ class _MesVoituresPageState extends State<Voiture> with SingleTickerProviderStat
     setState(() => _isLoading = true);
 
     final userDataJsons = await _storage.read(key: 'user_data');
-    if (userDataJsons == null) return;
+    if (userDataJsons == null) {
+      setState(() => _isLoading = false);
+      return;
+    }
 
     final userData = jsonDecode(userDataJsons);
     try {
       final response = await http.get(
-        Uri.parse('http://192.168.1.17:8000/api/voitures/${userData["id"]}'),
+        Uri.parse('http://192.168.1.11:8000/api/voitures/${userData["id"]}'),
         headers: {'Accept': 'application/json'},
       );
 
@@ -62,17 +80,26 @@ class _MesVoituresPageState extends State<Voiture> with SingleTickerProviderStat
       }
     } catch (e) {
       setState(() => _isLoading = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erreur: ${e.toString()}'),
-            backgroundColor: Colors.red[400],
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-        );
-      }
+      _showErrorSnackBar('Erreur: ${e.toString()}');
     }
+  }
+
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.error_outline, color: Colors.white),
+            const SizedBox(width: 12),
+            Expanded(child: Text(message)),
+          ],
+        ),
+        backgroundColor: Colors.red.shade600,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.all(16),
+      ),
+    );
   }
 
   List<dynamic> get _filteredVoitures {
@@ -88,16 +115,17 @@ class _MesVoituresPageState extends State<Voiture> with SingleTickerProviderStat
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: Colors.grey.shade50,
       body: CustomScrollView(
         slivers: [
           _buildSliverAppBar(),
-          SliverToBoxAdapter(child: _buildSearchBar()),
+          SliverToBoxAdapter(child: _buildHeader()),
+          SliverToBoxAdapter(child: _buildSearchSection()),
           _isLoading
               ? SliverFillRemaining(child: _buildLoadingIndicator())
               : _filteredVoitures.isEmpty
               ? SliverFillRemaining(child: _buildEmptyState())
-              : _buildVoituresSliverGrid(),
+              : _buildVoituresGrid(),
         ],
       ),
     );
@@ -108,103 +136,147 @@ class _MesVoituresPageState extends State<Voiture> with SingleTickerProviderStat
       expandedHeight: 120,
       floating: false,
       pinned: true,
-      backgroundColor: Colors.white,
       elevation: 0,
-      shadowColor: Colors.black.withOpacity(0.1),
-      surfaceTintColor: Colors.transparent,
-      leading: Container(
-        margin: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: Colors.grey[50],
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF1E293B)),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      actions: [
-        Container(
-          margin: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.grey[50],
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: IconButton(
-            icon: const Icon(Icons.refresh_rounded, color: Color(0xFF1E293B)),
-            onPressed: _fetchVoitures,
-          ),
-        ),
-      ],
+      backgroundColor: Colors.white,
+      foregroundColor: Colors.grey.shade800,
       flexibleSpace: FlexibleSpaceBar(
-        titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
-        title: const Text(
-          'Mes Voitures',
+        title: Text(
+          'Mes Véhicules',
           style: TextStyle(
-            color: Color(0xFF1E293B),
-            fontSize: 26,
+            color: Colors.grey.shade800,
             fontWeight: FontWeight.bold,
+            fontSize: 20,
           ),
         ),
         background: Container(
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                Colors.white,
-                Color(0xFFF1F5F9),
+                Colors.blue.shade50,
+                Colors.indigo.shade50,
               ],
             ),
           ),
         ),
       ),
+      actions: [
+        Container(
+          margin: const EdgeInsets.only(right: 16),
+          decoration: BoxDecoration(
+            color: Colors.blue.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: IconButton(
+            icon: const Icon(Icons.refresh, color: Colors.blue),
+            onPressed: () {
+              _fetchVoitures();
+              HapticFeedback.lightImpact();
+            },
+          ),
+        ),
+      ],
     );
   }
 
-  Widget _buildSearchBar() {
+  Widget _buildHeader() {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Diagnostic Automobile',
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey.shade800,
+              height: 1.2,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Sélectionnez le véhicule à diagnostiquer',
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey.shade600,
+              height: 1.4,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSearchSection() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      child: Column(
+        children: [
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 20,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: TextField(
+              focusNode: _searchFocusNode,
+              decoration: InputDecoration(
+                hintText: 'Rechercher un véhicule...',
+                hintStyle: TextStyle(color: Colors.grey.shade500),
+                prefixIcon: Container(
+                  padding: const EdgeInsets.all(12),
+                  child: Icon(Icons.search,
+                      color: Colors.blue.shade600, size: 22),
+                ),
+                suffixIcon: _searchQuery.isNotEmpty
+                    ? IconButton(
+                  icon: Icon(Icons.clear, color: Colors.grey.shade400),
+                  onPressed: () {
+                    setState(() => _searchQuery = '');
+                    _searchFocusNode.unfocus();
+                  },
+                )
+                    : null,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide.none,
+                ),
+                filled: true,
+                fillColor: Colors.white,
+                contentPadding: const EdgeInsets.symmetric(
+                    vertical: 16, horizontal: 20),
+              ),
+              onChanged: (value) => setState(() => _searchQuery = value),
+            ),
+          ),
+          if (_filteredVoitures.isNotEmpty && !_isLoading) ...[
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Icon(Icons.directions_car,
+                    color: Colors.blue.shade600, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  '${_filteredVoitures.length} véhicule${_filteredVoitures.length > 1 ? 's' : ''} disponible${_filteredVoitures.length > 1 ? 's' : ''}',
+                  style: TextStyle(
+                    color: Colors.grey.shade600,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
           ],
-        ),
-        child: TextField(
-          decoration: InputDecoration(
-            hintText: 'Rechercher une voiture...',
-            hintStyle: TextStyle(color: Colors.grey[400]),
-            prefixIcon: Container(
-              padding: const EdgeInsets.all(12),
-              child: Icon(
-                Icons.search_rounded,
-                color: Colors.grey[400],
-                size: 24,
-              ),
-            ),
-            suffixIcon: _searchQuery.isNotEmpty
-                ? IconButton(
-              icon: Icon(Icons.clear_rounded, color: Colors.grey[400]),
-              onPressed: () => setState(() => _searchQuery = ''),
-            )
-                : null,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide.none,
-            ),
-            filled: true,
-            fillColor: Colors.white,
-            contentPadding: const EdgeInsets.symmetric(vertical: 16),
-          ),
-          onChanged: (value) => setState(() => _searchQuery = value),
-        ),
+        ],
       ),
     );
   }
@@ -223,20 +295,20 @@ class _MesVoituresPageState extends State<Voiture> with SingleTickerProviderStat
                 BoxShadow(
                   color: Colors.black.withOpacity(0.1),
                   blurRadius: 20,
-                  offset: const Offset(0, 5),
+                  offset: const Offset(0, 4),
                 ),
               ],
             ),
-            child: const CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF3B82F6)),
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.blue.shade600),
               strokeWidth: 3,
             ),
           ),
           const SizedBox(height: 24),
           Text(
-            'Chargement de vos voitures...',
+            'Chargement de vos véhicules...',
             style: TextStyle(
-              color: Colors.grey[600],
+              color: Colors.grey.shade600,
               fontSize: 16,
               fontWeight: FontWeight.w500,
             ),
@@ -256,34 +328,36 @@ class _MesVoituresPageState extends State<Voiture> with SingleTickerProviderStat
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: const Color(0xFF3B82F6).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(24),
+                color: Colors.grey.shade100,
+                shape: BoxShape.circle,
               ),
               child: Icon(
-                Icons.directions_car_outlined,
+                _searchQuery.isEmpty
+                    ? Icons.directions_car_outlined
+                    : Icons.search_off,
                 size: 64,
-                color: const Color(0xFF3B82F6).withOpacity(0.7),
+                color: Colors.grey.shade400,
               ),
             ),
             const SizedBox(height: 24),
             Text(
               _searchQuery.isEmpty
-                  ? 'Aucune voiture enregistrée'
+                  ? 'Aucun véhicule enregistré'
                   : 'Aucun résultat trouvé',
-              style: const TextStyle(
-                fontSize: 22,
-                color: Color(0xFF1E293B),
+              style: TextStyle(
+                fontSize: 20,
+                color: Colors.grey.shade700,
                 fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 8),
             Text(
               _searchQuery.isEmpty
-                  ? 'Ajoutez votre première voiture pour commencer'
-                  : 'Aucune voiture ne correspond à "$_searchQuery"',
+                  ? 'Ajoutez votre premier véhicule pour commencer'
+                  : 'Aucun véhicule ne correspond à "$_searchQuery"',
               style: TextStyle(
-                color: Colors.grey[600],
                 fontSize: 16,
+                color: Colors.grey.shade500,
               ),
               textAlign: TextAlign.center,
             ),
@@ -291,12 +365,13 @@ class _MesVoituresPageState extends State<Voiture> with SingleTickerProviderStat
               const SizedBox(height: 24),
               ElevatedButton.icon(
                 onPressed: () => setState(() => _searchQuery = ''),
-                icon: const Icon(Icons.refresh_rounded),
+                icon: const Icon(Icons.refresh),
                 label: const Text('Réinitialiser'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF3B82F6),
+                  backgroundColor: Colors.blue,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 24, vertical: 12),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -309,66 +384,43 @@ class _MesVoituresPageState extends State<Voiture> with SingleTickerProviderStat
     );
   }
 
-  Widget _buildVoituresSliverGrid() {
+  Widget _buildVoituresGrid() {
     return SliverPadding(
-      padding: const EdgeInsets.all(20),
-      sliver: SliverToBoxAdapter(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 12),
-              child: Row(
-                children: [
-                  Container(
-                    width: 4,
-                    height: 24,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF3B82F6),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-
-                  const Text(
-                    'Sélectionnez une voiture',
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: Color(0xFF1E293B),
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            FadeTransition(
+      padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
+      sliver: SliverGrid(
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          crossAxisSpacing: 16,
+          mainAxisSpacing: 16,
+          childAspectRatio: 0.85,
+        ),
+        delegate: SliverChildBuilderDelegate(
+              (context, index) {
+            return FadeTransition(
               opacity: _fadeAnimation,
-              child: GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 16,
-                  childAspectRatio: 0.85,
-                ),
-                itemCount: _filteredVoitures.length,
-                itemBuilder: (context, index) {
-                  return AnimatedContainer(
-                    duration: Duration(milliseconds: 300 + (index * 100)),
-                    curve: Curves.easeOutBack,
-                    child: _buildVoitureCard(_filteredVoitures[index], index),
-                  );
-                },
+              child: SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(0, 0.3),
+                  end: Offset.zero,
+                ).animate(CurvedAnimation(
+                  parent: _animationController,
+                  curve: Interval(
+                    (index * 0.1).clamp(0.0, 1.0),
+                    ((index * 0.1) + 0.4).clamp(0.0, 1.0),
+                    curve: Curves.easeOutCubic,
+                  ),
+                )),
+                child: _buildModernVoitureCard(_filteredVoitures[index]),
               ),
-            ),
-          ],
+            );
+          },
+          childCount: _filteredVoitures.length,
         ),
       ),
     );
   }
 
-  Widget _buildVoitureCard(Map<String, dynamic> voiture, int index) {
+  Widget _buildModernVoitureCard(Map<String, dynamic> voiture) {
     final carColor = _getCarColor(voiture['company']);
 
     return Container(
@@ -377,9 +429,9 @@ class _MesVoituresPageState extends State<Voiture> with SingleTickerProviderStat
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withOpacity(0.06),
             blurRadius: 20,
-            offset: const Offset(0, 8),
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -387,7 +439,10 @@ class _MesVoituresPageState extends State<Voiture> with SingleTickerProviderStat
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(20),
-          onTap: () => _navigateToCarDetail(context, voiture),
+          onTap: () {
+            HapticFeedback.lightImpact();
+            _navigateToCarDetail(context, voiture);
+          },
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -412,30 +467,28 @@ class _MesVoituresPageState extends State<Voiture> with SingleTickerProviderStat
 
                     children: [
                       const SizedBox(height: 12),
-                      Hero(
-                        tag: 'car_${voiture['id']}',
-                        child: Container(
-                          padding: const EdgeInsets.all(5),
-                          decoration: BoxDecoration(
-                            color: carColor.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Icon(
-                            Icons.directions_car_rounded,
-                            size: 40,
-                            color: carColor,
-                          ),
+                      Container(
+                        padding: const EdgeInsets.all(5),
+                        decoration: BoxDecoration(
+                          color: carColor.withOpacity(0.15),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.directions_car_rounded,
+                          size: 40,
+                          color: carColor,
                         ),
                       ),
                       const SizedBox(height: 12),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 4),
                         decoration: BoxDecoration(
                           color: carColor.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
-                          voiture['company'] ?? 'Marque inconnue',
+                          voiture['company'] ?? 'Marque',
                           style: TextStyle(
                             fontSize: 12,
                             color: carColor,
@@ -450,40 +503,23 @@ class _MesVoituresPageState extends State<Voiture> with SingleTickerProviderStat
               Expanded(
                 flex: 2,
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(5),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
                         voiture['model'] ?? 'Modèle inconnu',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF1E293B),
+                          color: Colors.grey.shade800,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         textAlign: TextAlign.center,
                       ),
-                      if (voiture['year'] != null) ...[
-                        const SizedBox(height: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[100],
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            '${voiture['year']}',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[600],
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ],
+
                     ],
                   ),
                 ),
@@ -497,15 +533,28 @@ class _MesVoituresPageState extends State<Voiture> with SingleTickerProviderStat
 
   Color _getCarColor(String? company) {
     switch (company?.toLowerCase()) {
-      case 'toyota': return const Color(0xFFEF4444);
-      case 'bmw': return const Color(0xFF3B82F6);
-      case 'mercedes': return const Color(0xFF1F2937);
-      case 'audi': return const Color(0xFF6B7280);
-      case 'honda': return const Color(0xFF10B981);
-      case 'ford': return const Color(0xFF8B5CF6);
-      case 'volkswagen': return const Color(0xFFF59E0B);
-      case 'hyundai': return const Color(0xFFEC4899);
-      default: return const Color(0xFF06B6D4);
+      case 'toyota':
+        return Colors.red.shade600;
+      case 'bmw':
+        return Colors.blue.shade700;
+      case 'mercedes':
+        return Colors.blueGrey.shade800;
+      case 'audi':
+        return Colors.grey.shade700;
+      case 'volkswagen':
+        return Colors.indigo.shade600;
+      case 'ford':
+        return Colors.blue.shade800;
+      case 'peugeot':
+        return Colors.orange.shade600;
+      case 'renault':
+        return Colors.yellow.shade700;
+      case 'nissan':
+        return Colors.red.shade700;
+      case 'honda':
+        return Colors.purple.shade600;
+      default:
+        return Colors.teal.shade600;
     }
   }
 
@@ -513,16 +562,15 @@ class _MesVoituresPageState extends State<Voiture> with SingleTickerProviderStat
     Navigator.push(
       context,
       PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) {
-          return AllPannesPage(
-            voitureModel: voiture['model'],
-            voitureId: voiture['id'],
-          );
-        },
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            AllPannesPage(
+              voitureModel: voiture['model'],
+              voitureId: voiture['id'],
+            ),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           const begin = Offset(1.0, 0.0);
           const end = Offset.zero;
-          const curve = Curves.easeInOutCubic;
+          const curve = Curves.easeInOut;
 
           var tween = Tween(begin: begin, end: end).chain(
             CurveTween(curve: curve),
@@ -533,7 +581,6 @@ class _MesVoituresPageState extends State<Voiture> with SingleTickerProviderStat
             child: child,
           );
         },
-        transitionDuration: const Duration(milliseconds: 400),
       ),
     );
   }

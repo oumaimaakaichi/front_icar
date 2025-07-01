@@ -33,7 +33,7 @@ class _ForfaitsByServicePageState extends State<ForfaitsByServicePage> {
   Future<void> _fetchForfaits() async {
     try {
       final response = await http.get(
-        Uri.parse('http://192.168.1.17:8000/api/forfaits/service/${widget.serviceId}'),
+        Uri.parse('http://192.168.1.11:8000/api/forfaits/service/${widget.serviceId}'),
         headers: {'Accept': 'application/json'},
       );
 
@@ -54,7 +54,7 @@ class _ForfaitsByServicePageState extends State<ForfaitsByServicePage> {
   }
 
   Future<void> _envoyerDemande(int forfaitId) async {
-    final url = Uri.parse('http://192.168.1.17:8000/api/demandes');
+    final url = Uri.parse('http://192.168.1.11:8000/api/demandes');
     try {
       final response = await http.post(
         url,

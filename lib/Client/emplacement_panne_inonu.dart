@@ -7,14 +7,14 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:car_mobile/Client/confirmation_page.dart';
 
 class MaintenanceTypePagee extends StatefulWidget {
-  final int categoryId;
+
   final int voitureId;
   final int clientId;
   final String problemDescription;
 
   const MaintenanceTypePagee({
     Key? key,
-    required this.categoryId,
+
     required this.voitureId,
     required this.clientId,
     required this.problemDescription,
@@ -70,7 +70,7 @@ class _MaintenanceTypePageeState extends State<MaintenanceTypePagee>
     setState(() => _isLoading = true);
     try {
       final response = await http.get(
-        Uri.parse('http://192.168.1.17:8000/api/ateliers'),
+        Uri.parse('http://192.168.1.11:8000/api/ateliers'),
       );
       if (response.statusCode == 200) {
         setState(() {
@@ -129,7 +129,7 @@ class _MaintenanceTypePageeState extends State<MaintenanceTypePagee>
       final longitude = 0.0; // Remplacer par la vraie longitude
 
       final response = await http.post(
-        Uri.parse('http://192.168.1.17:8000/api/demandes-panne-inconnue'),
+        Uri.parse('http://192.168.1.11:8000/api/demandes-panne-inconnue'),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
@@ -137,7 +137,7 @@ class _MaintenanceTypePageeState extends State<MaintenanceTypePagee>
         body: jsonEncode({
           'voiture_id': widget.voitureId,
           'client_id': clientId,
-          'category_id': widget.categoryId,
+
           'description_probleme': widget.problemDescription,
           'type_emplacement': _isFixed ? 'fixe' : 'domicile',
           'atelier_id': _isFixed ? _selectedAtelier['id'] : null,
@@ -304,7 +304,7 @@ class _MaintenanceTypePageeState extends State<MaintenanceTypePagee>
                             context,
                             MaterialPageRoute(
                               builder: (context) => DomicileEmplacementPage(
-                                categoryId: widget.categoryId,
+
                                 voitureId: widget.voitureId,
                                 clientId: widget.clientId,
                                   problemDescription: widget.problemDescription

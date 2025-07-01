@@ -53,7 +53,7 @@ class _TechnicienTicketsPageState extends State<TechnicienTicketsPage> {
     final userData = jsonDecode(userDataJsons);
     try {
       final response = await http.get(
-        Uri.parse('http://192.168.1.162:8000/api/tickets/technicien/${userData["id"]}'),
+        Uri.parse('http://192.168.1.11:8000/api/tickets/technicien/${userData["id"]}'),
         headers: {
           'Accept': 'application/json',
           'Authorization': 'Bearer $_authToken',
@@ -529,7 +529,7 @@ class __AddTicketFormState extends State<_AddTicketForm> {
   Future<void> _fetchTicketTypes() async {
     try {
       final response = await http.get(
-        Uri.parse('http://192.168.1.162:8000/api/tickets/type'),
+        Uri.parse('http://192.168.1.11:8000/api/tickets/type'),
         headers: {
           'Accept': 'application/json',
         },
@@ -566,7 +566,7 @@ class __AddTicketFormState extends State<_AddTicketForm> {
 
     try {
       final response = await http.post(
-        Uri.parse('http://192.168.113.216:8000/api/tickets'),
+        Uri.parse('http://192.168.1.11:8000/api/tickets'),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',

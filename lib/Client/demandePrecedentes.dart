@@ -16,7 +16,7 @@ class _DemandesAvecTechnicienPageState extends State<DemandesAvecTechnicienPage>
   bool isLoading = true;
   Map<int, String?> meetLinks = {};
   Map<int, bool> meetLinkStatus = {};
-
+  Map<int, bool> meetOpening = {};
   @override
   void initState() {
     super.initState();
@@ -25,7 +25,7 @@ class _DemandesAvecTechnicienPageState extends State<DemandesAvecTechnicienPage>
 
   Future<void> fetchDemandes() async {
     try {
-      final url = Uri.parse('http://192.168.1.17:8000/api/demandes/user/${widget.userId}');
+      final url = Uri.parse('http://192.168.1.11:8000/api/demandes/user/${widget.userId}');
       final response = await http.get(url);
 
       if (response.statusCode == 200) {
@@ -54,7 +54,7 @@ class _DemandesAvecTechnicienPageState extends State<DemandesAvecTechnicienPage>
 
   Future<void> checkMeetLinkAvailability(int demandeId) async {
     try {
-      final url = Uri.parse('http://192.168.1.17:8000/api/demandes/$demandeId/meet-link');
+      final url = Uri.parse('http://192.168.1.11:8000/api/demandes/$demandeId/meet-link');
       final response = await http.get(url);
 
       if (response.statusCode == 200) {
@@ -63,8 +63,13 @@ class _DemandesAvecTechnicienPageState extends State<DemandesAvecTechnicienPage>
           meetLinks[demandeId] = data['lien_meet'];
           meetLinkStatus[demandeId] = data['partage_with_client'] == 1 ||
               data['partage_with_client'] == true;
+          meetOpening[demandeId] = data['ouvert'] == 1 ||
+              data['ouvert'] == true;
         });
+
+        print(meetOpening[demandeId]);
       }
+
     } catch (e) {
       print('Erreur lors de la récupération du lien Meet: $e');
     }
@@ -89,11 +94,11 @@ class _DemandesAvecTechnicienPageState extends State<DemandesAvecTechnicienPage>
           demande: demande,
           meetLink: meetLinks[demande['id']],
           isShared: meetLinkStatus[demande['id']] ?? false,
+          isOpen: meetOpening[demande['id']] ?? false,
         ),
       ),
     );
   }
-
   String _getStatusColor(String? status) {
     switch (status?.toLowerCase()) {
       case 'terminé':
@@ -249,6 +254,7 @@ class _DemandesAvecTechnicienPageState extends State<DemandesAvecTechnicienPage>
     final demandeId = demande['id'];
     final meetLink = meetLinks[demandeId];
     final isShared = meetLinkStatus[demandeId] ?? false;
+    final isOpen = meetOpening[demandeId] ?? false;
     final status = demande['statut'] ?? 'En attente';
 
     return Container(
@@ -279,14 +285,11 @@ class _DemandesAvecTechnicienPageState extends State<DemandesAvecTechnicienPage>
                   children: [
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: _getStatusBgColor(status),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
+
 
                     ),
                     const Spacer(),
-                    if (isShared && meetLink != null)
+                    if (isShared && meetLink != null && isOpen)
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
@@ -447,12 +450,13 @@ class DemandeDetailsPage extends StatelessWidget {
   final dynamic demande;
   final String? meetLink;
   final bool isShared;
-
+final bool isOpen;
   const DemandeDetailsPage({
     super.key,
     required this.demande,
     this.meetLink,
     required this.isShared,
+    required this.isOpen,
   });
 
   String _formatDate(String? dateStr) {
@@ -622,10 +626,10 @@ class DemandeDetailsPage extends StatelessWidget {
             ),
 
             // Section Visioconférence
-            if (isShared && meetLink != null) ...[
+
               const SizedBox(height: 20),
               _buildVideoConferenceSection(),
-            ],
+
 
             const SizedBox(height: 32),
           ],
@@ -879,14 +883,16 @@ class DemandeDetailsPage extends StatelessWidget {
       width: double.infinity,
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [Colors.teal[400]!, Colors.teal[600]!],
+          colors: isOpen
+              ? [Colors.teal[400]!, Colors.teal[600]!]
+              : [Colors.grey[400]!, Colors.grey[600]!],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.teal.withOpacity(0.3),
+            color: isOpen ? Colors.teal.withOpacity(0.3) : Colors.grey.withOpacity(0.3),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -905,15 +911,17 @@ class DemandeDetailsPage extends StatelessWidget {
                     color: Colors.white.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.video_call,
                     color: Colors.white,
                     size: 24,
                   ),
                 ),
                 const SizedBox(width: 12),
-                const Text(
-                  'Visioconférence disponible',
+                Text(
+                  isOpen
+                      ? 'Visioconférence disponible'
+                      : 'Visioconférence fermée',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
@@ -925,8 +933,10 @@ class DemandeDetailsPage extends StatelessWidget {
 
             const SizedBox(height: 16),
 
-            const Text(
-              'Rejoignez la réunion avec votre technicien pour un accompagnement personnalisé.',
+            Text(
+              isOpen
+                  ? 'Rejoignez la réunion avec votre technicien pour un accompagnement personnalisé.'
+                  : 'Cette visioconférence est actuellement indisponible.',
               style: TextStyle(
                 fontSize: 16,
                 color: Colors.white,
@@ -940,63 +950,75 @@ class DemandeDetailsPage extends StatelessWidget {
               width: double.infinity,
               height: 56,
               child: ElevatedButton.icon(
-                icon: const Icon(Icons.video_call, size: 24),
-                label: const Text(
-                  'Rejoindre maintenant',
+                icon: Icon(
+                  isOpen ? Icons.video_call : Icons.lock_outline,
+                  size: 24,
+                  color:isOpen ? Colors.teal[600] : Colors.white,
+                ),
+                label: Text(
+                  isOpen
+                      ? 'Rejoindre maintenant'
+                      : 'Fermée',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
+                    color: isOpen ? Colors.teal : Colors.white
                   ),
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white,
-                  foregroundColor: Colors.teal[600],
+                  foregroundColor: isOpen ? Colors.teal[600] : Colors.white,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                onPressed: () => _launchMeetUrl(meetLink!),
+                onPressed: isOpen
+                    ? () => _launchMeetUrl(meetLink!)
+                    : null, // Désactive le bouton si fermé
               ),
             ),
 
-            const SizedBox(height: 12),
+            if (!isOpen) const SizedBox(height: 12),
 
-            InkWell(
-              onTap: () => _launchMeetUrl(meetLink!),
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.link,
-                      color: Colors.white,
-                      size: 16,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        meetLink!,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                        ),
-                        overflow: TextOverflow.ellipsis,
+            if (isOpen) ...[
+              const SizedBox(height: 12),
+              InkWell(
+                onTap: () => _launchMeetUrl(meetLink!),
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.link,
+                        color: Colors.white,
+                        size: 16,
                       ),
-                    ),
-                    const Icon(
-                      Icons.open_in_new,
-                      color: Colors.white,
-                      size: 16,
-                    ),
-                  ],
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          meetLink!,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const Icon(
+                        Icons.open_in_new,
+                        color: Colors.white,
+                        size: 16,
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
+            ],
           ],
         ),
       ),

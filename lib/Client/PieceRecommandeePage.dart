@@ -75,7 +75,7 @@ class _PieceRecommandeePageState extends State<PieceRecommandeePage>
   Future<void> _fetchPieceRecommandee() async {
     try {
       final response = await http.get(
-        Uri.parse('http://192.168.1.17:8000/api/piece-recommandee/${widget.demandeId}'),
+        Uri.parse('http://192.168.1.11:8000/api/piece-recommandee/${widget.demandeId}'),
         headers: {
           'Accept': 'application/json',
         },
@@ -188,7 +188,7 @@ class _PieceRecommandeePageState extends State<PieceRecommandeePage>
 
     try {
       final response = await http.put(
-        Uri.parse('http://192.168.1.17:8000/api/demandes/${widget.demandeId}/pieces-choisies'),
+        Uri.parse('http://192.168.1.11:8000/api/demandes/${widget.demandeId}/pieces-choisies'),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
@@ -633,7 +633,7 @@ class _PieceRecommandeePageState extends State<PieceRecommandeePage>
                     borderRadius: BorderRadius.circular(12),
                     child: pieceData['photo'] != null
                         ? Image.network(
-                      'http://192.168.1.17:8000/storage/${pieceData['photo']}',
+                      'http://192.168.1.11:8000/storage/${pieceData['photo']}',
                       fit: BoxFit.contain,
                       width: double.infinity,
                       errorBuilder: (context, error, stackTrace) =>

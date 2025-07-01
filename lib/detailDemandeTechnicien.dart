@@ -49,7 +49,7 @@ class _DemandeDetailPageState extends State<DemandeDetailPage> {
   Future<void> _fetchMeetLink() async {
     try {
       final response = await http.get(
-        Uri.parse('http://192.168.1.17:8000/api/flux-par-demande/${widget.demande['id']}'),
+        Uri.parse('http://192.168.1.11:8000/api/flux-par-demande/${widget.demande['id']}'),
         headers: {'Accept': 'application/json'},
       );
 
@@ -79,7 +79,7 @@ class _DemandeDetailPageState extends State<DemandeDetailPage> {
 
     try {
       final response = await http.put(
-        Uri.parse('http://192.168.1.17:8000/api/flux-direct/$_idFlux/fermer'),
+        Uri.parse('http://192.168.1.11:8000/api/flux-direct/$_idFlux/fermer'),
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
@@ -104,7 +104,7 @@ class _DemandeDetailPageState extends State<DemandeDetailPage> {
   Future<void> _fetchPartageStatus() async {
     try {
       final response = await http.get(
-        Uri.parse('http://192.168.1.17:8000/api/demande-flux/by-flux/$_idFlux'),
+        Uri.parse('http://192.168.1.11:8000/api/demande-flux/by-flux/$_idFlux'),
       );
 
       if (response.statusCode == 200) {
@@ -125,7 +125,7 @@ class _DemandeDetailPageState extends State<DemandeDetailPage> {
     try {
       print(_idFlux);
       final response = await http.put(
-        Uri.parse('http://192.168.1.17:8000/api/autoriser-partage/$_idFlux'),
+        Uri.parse('http://192.168.1.11:8000/api/autoriser-partage/$_idFlux'),
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
@@ -160,7 +160,7 @@ class _DemandeDetailPageState extends State<DemandeDetailPage> {
       final generatedLink = 'https://meet.jit.si/icar-${widget.demande['id']}';
 
       final response = await http.post(
-        Uri.parse('http://192.168.1.17:8000/api/flux-direct'),
+        Uri.parse('http://192.168.1.11:8000/api/flux-direct'),
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
@@ -194,7 +194,7 @@ class _DemandeDetailPageState extends State<DemandeDetailPage> {
 
     try {
       final response = await http.post(
-        Uri.parse('http://192.168.1.17:8000/api/demande-flux/'),
+        Uri.parse('http://192.168.1.11:8000/api/demande-flux/'),
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
@@ -249,7 +249,7 @@ class _DemandeDetailPageState extends State<DemandeDetailPage> {
           ),
         )
     );
-    }
+  }
 
   void _showErrorSnack(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -276,7 +276,7 @@ class _DemandeDetailPageState extends State<DemandeDetailPage> {
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
         title: const Text('Détails de la demande', style: TextStyle(color: Colors.white)),
-        backgroundColor:  Color(0xFF6C5CE7),
+        backgroundColor:  Colors.blueGrey,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
         centerTitle: true,
@@ -473,36 +473,12 @@ class _DemandeDetailPageState extends State<DemandeDetailPage> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      if (_meetLink != null)
-                        IconButton(
-                          icon: Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: Colors.red.withOpacity(0.1),
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: Colors.red.withOpacity(0.5),
-                                width: 1,
-                              ),
-                            ),
-                            child: const Icon(
-                              Icons.close,
-                              size: 18,
-                              color: Colors.red,
-                            ),
-                          ),
-                          onPressed: () {
-                            // Ajoutez ici la logique pour fermer le flux
 
-                          },
-                          tooltip: 'Fermer le flux',
-                          splashRadius: 20,
-                        ),
                     ],
                   ),
                   const SizedBox(height: 16),
                   GestureDetector(
-                    onTap: _isGeneratingLink
+                    onTap: (_isGeneratingLink || _ouvertureMeet == false)
                         ? null
                         : () {
                       if (_meetLink != null) {
@@ -515,25 +491,33 @@ class _DemandeDetailPageState extends State<DemandeDetailPage> {
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: _meetLink != null
+                        color: (_ouvertureMeet == false)
+                            ? Colors.grey.withOpacity(0.1)
+                            : (_meetLink != null
                             ? Colors.green.withOpacity(0.1)
-                            : Colors.blue.withOpacity(0.1),
+                            : Colors.blue.withOpacity(0.1)),
                         border: Border.all(
-                          color: _meetLink != null ? Colors.green : Colors.blue,
+                          color: (_ouvertureMeet == false)
+                              ? Colors.grey
+                              : (_meetLink != null ? Colors.green : Colors.blue),
                           width: 2,
                         ),
                       ),
                       child: _isGeneratingLink
                           ? const CircularProgressIndicator()
                           : Icon(
-                        _meetLink != null ? Icons.videocam : Icons.videocam_off,
+                        (_ouvertureMeet == false)
+                            ? Icons.videocam_off
+                            : (_meetLink != null ? Icons.videocam : Icons.videocam_off),
                         size: 40,
-                        color: _meetLink != null ? Colors.green : Colors.blue,
+                        color: (_ouvertureMeet == false)
+                            ? Colors.grey
+                            : (_meetLink != null ? Colors.green : Colors.blue),
                       ),
                     ),
                   ),
                   const SizedBox(height: 16),
-                  if (_meetLink != null)
+                  if (_meetLink != null && _ouvertureMeet != false)
                     Text(
                       _meetLink!,
                       style: TextStyle(
@@ -542,8 +526,18 @@ class _DemandeDetailPageState extends State<DemandeDetailPage> {
                       ),
                       textAlign: TextAlign.center,
                     ),
+                  if (_ouvertureMeet == false)
+                    Text(
+                      'Flux fermé - Vidéoconférence indisponible',
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 12,
+                        fontStyle: FontStyle.italic,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
                   const SizedBox(height: 16),
-                  if (_meetLink != null && _hasDemandeFlux == false)
+                  if (_meetLink != null && _hasDemandeFlux == false && _ouvertureMeet != false)
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
@@ -652,49 +646,49 @@ class _DemandeDetailPageState extends State<DemandeDetailPage> {
                         ),
                       ),
 
-
-
                     if (_partageAvecClient == true && _ouvertureMeet == true)
                       const SizedBox(height: 16),
 
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: _fermerFlux,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red[800],
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          elevation: 0,
-                        ),
-                        child: _isGeneratingLink
-                            ? const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
+                    // Le bouton "Fermer le flux" n'est visible que si _ouvertureMeet != false
+                    if (_ouvertureMeet != false)
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: _fermerFlux,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red[800],
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
                             ),
-                            SizedBox(width: 8),
-                            Text("Fermeture en cours..."),
-                          ],
-                        )
-                            : const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.close, size: 18, color: Colors.white),
-                            SizedBox(width: 8),
-                            Text("Fermer le flux", style: TextStyle(color: Colors.white)),
-                          ],
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            elevation: 0,
+                          ),
+                          child: _isGeneratingLink
+                              ? const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              SizedBox(width: 8),
+                              Text("Fermeture en cours..."),
+                            ],
+                          )
+                              : const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.close, size: 18, color: Colors.white),
+                              SizedBox(width: 8),
+                              Text("Fermer le flux", style: TextStyle(color: Colors.white)),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
                   ],
                 ),
               ),

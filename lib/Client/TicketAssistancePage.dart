@@ -44,7 +44,7 @@ class _TicketAssistancePageState extends State<TicketAssistancePage> {
   int _selectedTab = 0;
   String? _nom = '';
   String? _prenom = '';
-  static const String baseUrl = 'http://192.168.1.17:8000';
+  static const String baseUrl = 'http://192.168.1.11:8000';
   final primaryColor = const Color(0xFF6797A2);
   final secondaryColor = const Color(0xFF4CA1A3);
   // Pour les types de tickets
@@ -557,7 +557,7 @@ print(allTickets);
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [primaryColor, secondaryColor, secondaryColor],
+                  colors: [primaryColor, primaryColor, primaryColor],
                 ),
                 borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(30),
@@ -866,7 +866,7 @@ class _NewTicketPageState extends State<NewTicketPage> {
   final _descriptionController = TextEditingController();
   TypeTicket? _selectedType;
   bool _isSubmitting = false;
-  static const String baseUrl = 'http://192.168.113.216:8000';
+  static const String baseUrl = 'http://192.168.1.11:8000';
 
   @override
   void initState() {

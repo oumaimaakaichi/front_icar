@@ -10,14 +10,13 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class DomicileEmplacementPage extends StatefulWidget {
   final int voitureId;
-  final int categoryId;
   final int clientId;
   final String problemDescription;
 
   const DomicileEmplacementPage({
     Key? key,
     required this.voitureId,
-    required this.categoryId,
+
     required this.clientId,
     required this.problemDescription,
   }) : super(key: key);
@@ -852,7 +851,7 @@ class _DomicileEmplacementPageState extends State<DomicileEmplacementPage> {
       final body = {
         'voiture_id': widget.voitureId,
         'client_id': clientId,
-        'category_id': widget.categoryId,
+
         'description_probleme': widget.problemDescription,
         'type_emplacement': _selectedLocationType,
         'date_maintenance': formattedDate,
@@ -864,7 +863,7 @@ class _DomicileEmplacementPageState extends State<DomicileEmplacementPage> {
 
       final response = await http
           .post(
-        Uri.parse('http://192.168.1.17:8000/api/demandes-panne-inconnue'),
+        Uri.parse('http://192.168.1.11:8000/api/demandes-panne-inconnue'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(body),
       )

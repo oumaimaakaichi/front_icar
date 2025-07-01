@@ -11,7 +11,7 @@ class SignUpClientPage extends StatefulWidget {
 class _SignUpClientPageState extends State<SignUpClientPage> {
   final _formKey = GlobalKey<FormState>();
   final Dio dio = Dio(BaseOptions(
-    baseUrl: 'http://192.168.1.17:8000/api',
+    baseUrl: 'http://192.168.113.216:8000/api',
     headers: {'Accept': 'application/json'},
   ));
 
