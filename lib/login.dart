@@ -23,7 +23,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
   final _storage = const FlutterSecureStorage();
   bool _isLoading = false;
   bool _obscurePassword = true;
-  final String _apiUrl = "http://192.168.1.11:8000/api/login";
+  final String _apiUrl = "http://localhost:8000/api/login";
 
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;

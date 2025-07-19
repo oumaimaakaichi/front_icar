@@ -38,7 +38,7 @@ class _AjoutRapportPageState extends State<AjoutRapportPage> {
       final technicienId = userData['id'];
 
       final response = await http.post(
-        Uri.parse('http://192.168.1.11:8000/api/rapport-maintenance'),
+        Uri.parse('http://localhost:8000/api/rapport-maintenance'),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',

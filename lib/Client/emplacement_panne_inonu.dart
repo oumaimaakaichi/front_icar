@@ -70,7 +70,7 @@ class _MaintenanceTypePageeState extends State<MaintenanceTypePagee>
     setState(() => _isLoading = true);
     try {
       final response = await http.get(
-        Uri.parse('http://192.168.1.11:8000/api/ateliers'),
+        Uri.parse('http://localhost:8000/api/ateliers'),
       );
       if (response.statusCode == 200) {
         setState(() {
@@ -129,7 +129,7 @@ class _MaintenanceTypePageeState extends State<MaintenanceTypePagee>
       final longitude = 0.0; // Remplacer par la vraie longitude
 
       final response = await http.post(
-        Uri.parse('http://192.168.1.11:8000/api/demandes-panne-inconnue'),
+        Uri.parse('http://localhost:8000/api/demandes-panne-inconnue'),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',

@@ -41,7 +41,7 @@ class _RapportMaintenancePageState extends State<RapportMaintenancePage> {
     try {
       final token = await _storage.read(key: 'auth_token');
       final response = await http.get(
-        Uri.parse('http://192.168.1.11:8000/api/rapport-maintenance/demande/${widget.demande['id']}'),
+        Uri.parse('http://localhost:8000/api/rapport-maintenance/demande/${widget.demande['id']}'),
         headers: {
           'Accept': 'application/json',
 
@@ -85,8 +85,8 @@ class _RapportMaintenancePageState extends State<RapportMaintenancePage> {
       final technicienId = userData['id'];
 
       final url = _rapportExists
-          ? 'http://192.168.1.11:8000/api/rapport-maintenance/${_existingRapport!['id']}'
-          : 'http://192.168.1.11:8000/api/rapport-maintenance';
+          ? 'http://localhost:8000/api/rapport-maintenance/${_existingRapport!['id']}'
+          : 'http://localhost:8000/api/rapport-maintenance';
 
       final headers = {
         'Content-Type': 'application/json',
@@ -137,7 +137,7 @@ class _RapportMaintenancePageState extends State<RapportMaintenancePage> {
 
     try {
       final token = await _storage.read(key: 'auth_token');
-      final pdfUrl = 'http://192.168.1.11:8000/api/rapport-maintenance/${_existingRapport!['id']}/download';
+      final pdfUrl = 'http://localhost:8000/api/rapport-maintenance/${_existingRapport!['id']}/download';
 
       if (await canLaunch(pdfUrl)) {
         await launch(

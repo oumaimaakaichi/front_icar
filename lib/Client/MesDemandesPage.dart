@@ -87,7 +87,7 @@ class _MesDemandesPageState extends State<MesDemandesPage> with TickerProviderSt
 
     try {
       final response = await http.get(
-        Uri.parse('http://192.168.1.11:8000/api/demandes/$_userId'),
+        Uri.parse('http://localhost:8000/api/demandes/$_userId'),
         headers: {
           'Accept': 'application/json',
         },
@@ -908,7 +908,7 @@ class ConfirmationPage extends StatelessWidget {
 
   Future<Map<String, dynamic>> _fetchDemandeDetails() async {
     final response = await http.get(
-      Uri.parse('http://192.168.1.11:8000/api/demandes/$demandeId/confirmation-details'),
+      Uri.parse('http://localhost:8000/api/demandes/$demandeId/confirmation-details'),
     );
 
     if (response.statusCode == 200) {

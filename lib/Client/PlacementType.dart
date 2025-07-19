@@ -44,7 +44,7 @@ class _MaintenanceTypePageState extends State<MaintenanceTypePage> {
 
     try {
       final response = await http.get(
-        Uri.parse('http://192.168.1.11:8000/api/ateliers'),
+        Uri.parse('http://localhost:8000/api/ateliers'),
       );
 
       if (response.statusCode == 200) {
@@ -1221,7 +1221,7 @@ class ConfirmationPage extends StatelessWidget {
   Future<void> _showPiecesDialog(BuildContext context, List<dynamic> pieces) async {
     try {
       final response = await http.get(
-        Uri.parse('http://192.168.1.11:8000/api/catalogues'),
+        Uri.parse('http://localhost:8000/api/catalogues'),
         headers: {'Accept': 'application/json'},
       );
 

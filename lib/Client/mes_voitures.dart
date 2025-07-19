@@ -99,7 +99,7 @@ class _MesVoituresPageState extends State<MesVoituresPage> {
 
     try {
       final response = await http.get(
-        Uri.parse('http://192.168.1.11:8000/api/couleur'),
+        Uri.parse('http://localhost:8000/api/couleur'),
         headers: {
           'Accept': 'application/json',
         },
@@ -131,7 +131,7 @@ class _MesVoituresPageState extends State<MesVoituresPage> {
 
     try {
       final response = await http.get(
-        Uri.parse('http://192.168.1.11:8000/api/entreprises-with-voitures'),
+        Uri.parse('http://localhost:8000/api/entreprises-with-voitures'),
         headers: {
           'Accept': 'application/json',
         },
@@ -170,7 +170,7 @@ class _MesVoituresPageState extends State<MesVoituresPage> {
     final userData = jsonDecode(userDataJsons);
     try {
       final response = await http.get(
-        Uri.parse('http://192.168.1.11:8000/api/voiture/${userData["id"]}?page=$page'),
+        Uri.parse('http://localhost:8000/api/voiture/${userData["id"]}?page=$page'),
         headers: {
           'Accept': 'application/json',
         },
@@ -213,7 +213,7 @@ class _MesVoituresPageState extends State<MesVoituresPage> {
       voitureData['numero_chassis'] = voitureData['numero_chassis'].toString();
 
       final response = await http.post(
-        Uri.parse('http://192.168.1.11:8000/api/voitures'),
+        Uri.parse('http://localhost:8000/api/voitures'),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
@@ -251,7 +251,7 @@ class _MesVoituresPageState extends State<MesVoituresPage> {
       }
 
       final response = await http.put(
-        Uri.parse('http://192.168.1.11:8000/api/voitures/$id'),
+        Uri.parse('http://localhost:8000/api/voitures/$id'),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
@@ -277,7 +277,7 @@ class _MesVoituresPageState extends State<MesVoituresPage> {
   Future<void> _deleteVoiture(int id) async {
     try {
       final response = await http.delete(
-        Uri.parse('http://192.168.1.11:8000/api/voitures/$id'),
+        Uri.parse('http://localhost:8000/api/voitures/$id'),
         headers: {
           'Accept': 'application/json',
         },

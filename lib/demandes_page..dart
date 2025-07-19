@@ -65,7 +65,7 @@ class _DemandesTechniciensInconnuPageState extends State<DemandesTechniciensInco
 
       final userData = jsonDecode(userDataJson);
       final response = await http.get(
-        Uri.parse('http://192.168.1.11:8000/api/demandes-technicien/${userData['id']}'),
+        Uri.parse('http://localhost:8000/api/demandes-technicien/${userData['id']}'),
       );
 
       if (response.statusCode == 200) {

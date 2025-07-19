@@ -1,5 +1,6 @@
 import 'package:car_mobile/ProfilTechncien.dart';
 import 'package:car_mobile/TechnicienDemandesPage.dart';
+import 'package:car_mobile/TechnicienReviewsPage.dart';
 import 'package:car_mobile/demandes_page..dart';
 import 'package:car_mobile/login.dart';
 import 'package:car_mobile/settings_page.dart';
@@ -196,13 +197,17 @@ class _UserHomePageState extends State<UserHomePage> {
                         onTap: () {},
                       ),
                       _buildActionCard(
-                        title: 'Assistance',
-                        icon: Icons.support_agent,
+                        title: 'Reviews',
+                        icon: Icons.star,
                         color: Color(0xFF73B1BD),
                         onTap: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (context) => TechnicienTicketsPage()),
+                            MaterialPageRoute(
+                              builder: (context) => TechnicienReviewsPage(
+                                technicienId: _userId, // ou récupérer l'ID du technicien connecté
+                              ),
+                            ),
                           );
                         },
                       ),

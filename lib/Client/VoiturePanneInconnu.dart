@@ -67,7 +67,7 @@ class _MesVoituresPageState extends State<VoiturePanneInconnu>
     final userData = jsonDecode(userDataJsons);
     try {
       final response = await http.get(
-        Uri.parse('http://192.168.1.11:8000/api/voitures/${userData["id"]}'),
+        Uri.parse('http://localhost:8000/api/voitures/${userData["id"]}'),
         headers: {'Accept': 'application/json'},
       );
 

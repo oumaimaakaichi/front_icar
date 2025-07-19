@@ -863,7 +863,7 @@ class _DomicileEmplacementPageState extends State<DomicileEmplacementPage> {
 
       final response = await http
           .post(
-        Uri.parse('http://192.168.1.11:8000/api/demandes-panne-inconnue'),
+        Uri.parse('http://localhost:8000/api/demandes-panne-inconnue'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(body),
       )

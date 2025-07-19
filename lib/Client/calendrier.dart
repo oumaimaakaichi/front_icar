@@ -73,7 +73,7 @@ class _CalendrierDemandesPageState extends State<CalendrierDemandesPage>
     if (_userId == null) return;
     try {
       final response = await http.get(
-        Uri.parse('http://192.168.1.11:8000/api/demandes/user/$_userId'),
+        Uri.parse('http://localhost:8000/api/demandes/user/$_userId'),
         headers: {'Accept': 'application/json'},
       );
 

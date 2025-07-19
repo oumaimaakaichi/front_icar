@@ -29,7 +29,7 @@ class _DescriptionPannePageState extends State<DescriptionPannePage>
   List<dynamic> _catalogues = [];
   List<int> _selectedCatalogues = [];
 
-  final String baseUrl = 'http://192.168.1.11:8000';
+  final String baseUrl = 'http://localhost:8000';
 
   @override
   void initState() {

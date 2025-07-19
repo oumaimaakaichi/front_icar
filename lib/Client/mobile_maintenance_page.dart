@@ -829,7 +829,7 @@ class _MobileMaintenanceFlowState extends State<MobileMaintenanceFlow> {
       }
 
       final response = await http.put(
-        Uri.parse('http://192.168.1.11:8000/api/demandes/${widget.demandeId}/update-location'),
+        Uri.parse('http://localhost:8000/api/demandes/${widget.demandeId}/update-location'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(requestData),
       );

@@ -40,7 +40,7 @@ class _OffresPageState extends State<OffresPage> with TickerProviderStateMixin {
     });
 
     print(widget.clientId);
-    final url = Uri.parse('http://192.168.1.11:8000/api/demandes/client/${widget.clientId}/offres');
+    final url = Uri.parse('http://localhost:8000/api/demandes/client/${widget.clientId}/offres');
 
     try {
       final response = await http.get(url);
@@ -92,7 +92,7 @@ class _OffresPageState extends State<OffresPage> with TickerProviderStateMixin {
     );
 
     try {
-      final url = Uri.parse('http://192.168.1.11:8000/api/demandes/$demandeId/${action == 'accept' ? 'accept' : 'reject'}');
+      final url = Uri.parse('http://localhost:8000/api/demandes/$demandeId/${action == 'accept' ? 'accept' : 'reject'}');
       final response = await http.post(url);
 
       Navigator.of(context).pop(); // Fermer le dialog de loading

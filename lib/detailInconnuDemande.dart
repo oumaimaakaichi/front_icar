@@ -99,7 +99,7 @@ class _DemandeDetailsPageState extends State<DemandeDetailsPageInco> with Ticker
 
     try {
       final response = await http.get(
-        Uri.parse('http://192.168.1.11:8000/api/demandes-inconnues/${widget.demandeId}'),
+        Uri.parse('http://localhost:8000/api/demandes-inconnues/${widget.demandeId}'),
       );
 
       if (!mounted) return;
@@ -141,7 +141,7 @@ class _DemandeDetailsPageState extends State<DemandeDetailsPageInco> with Ticker
     try {
       print(widget.demandeId);
       final response = await http.get(
-        Uri.parse('http://192.168.1.11:8000/api/flux-par-demande_inconnu/${widget.demandeId}'),
+        Uri.parse('http://localhost:8000/api/flux-par-demande_inconnu/${widget.demandeId}'),
         headers: {'Accept': 'application/json'},
       );
 
@@ -174,7 +174,7 @@ class _DemandeDetailsPageState extends State<DemandeDetailsPageInco> with Ticker
 
     try {
       final response = await http.get(
-        Uri.parse('http://192.168.1.11:8000/api/demande-flux-inconnu/by-flux/$_idFlux'),
+        Uri.parse('http://localhost:8000/api/demande-flux-inconnu/by-flux/$_idFlux'),
       );
 
       if (!mounted) return;
@@ -208,7 +208,7 @@ class _DemandeDetailsPageState extends State<DemandeDetailsPageInco> with Ticker
       final generatedLink = 'https://meet.jit.si/icar-${widget.demandeId}';
 
       final response = await http.post(
-        Uri.parse('http://192.168.1.11:8000/api/flux-par-demandeInconnu'),
+        Uri.parse('http://localhost:8000/api/flux-par-demandeInconnu'),
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
@@ -262,7 +262,7 @@ class _DemandeDetailsPageState extends State<DemandeDetailsPageInco> with Ticker
 
     try {
       final response = await http.post(
-        Uri.parse('http://192.168.1.11:8000/api/demande-flux-inconnu'),
+        Uri.parse('http://localhost:8000/api/demande-flux-inconnu'),
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
@@ -299,7 +299,7 @@ class _DemandeDetailsPageState extends State<DemandeDetailsPageInco> with Ticker
 
     try {
       final response = await http.put(
-        Uri.parse('http://192.168.1.11:8000/api/flux-direct-inconnu/$_idFlux/fermer'),
+        Uri.parse('http://localhost:8000/api/flux-direct-inconnu/$_idFlux/fermer'),
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
@@ -330,7 +330,7 @@ class _DemandeDetailsPageState extends State<DemandeDetailsPageInco> with Ticker
 
     try {
       final response = await http.put(
-        Uri.parse('http://192.168.1.11:8000/api/demande-flux-inconnu/$_idFlux/autoriser-partage'),
+        Uri.parse('http://localhost:8000/api/demande-flux-inconnu/$_idFlux/autoriser-partage'),
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',

@@ -1,3 +1,4 @@
+import 'package:car_mobile/Client/MesDemandesInconnu.dart';
 import 'package:car_mobile/Client/MesDemandesPage.dart';
 import 'package:car_mobile/Client/OffresPage.dart';
 import 'package:car_mobile/Client/calendrier.dart';
@@ -75,7 +76,7 @@ class _PlusPageState extends State<PlusPage> with TickerProviderStateMixin {
       'lightColor': Color(0xFFF5F3FF),
     },
     {
-      'title': 'Notifications',
+      'title': 'Demande Panne Inconnu',
       'icon': Icons.notifications_active_rounded,
       'gradient': [Color(0xFF0984E3), Color(0xFF0984E3)],
       'lightColor': Color(0xFFFFF8F8),
@@ -442,7 +443,31 @@ class _PlusPageState extends State<PlusPage> with TickerProviderStateMixin {
           transitionDuration: Duration(milliseconds: 400),
         ),
       );
-    } else if (item['title'] == 'Offres') {
+    }
+    else if (item['title'] == 'Demande Panne Inconnu') {
+      Navigator.push(
+        context,
+        PageRouteBuilder(
+          pageBuilder: (context, animation, secondaryAnimation) => MesDemandesPageInconnu(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(1.0, 0.0),
+                end: Offset.zero,
+              ).animate(CurvedAnimation(
+                parent: animation,
+                curve: Curves.easeInOutCubic,
+              )),
+              child: FadeTransition(
+                opacity: animation,
+                child: child,
+              ),
+            );
+          },
+          transitionDuration: Duration(milliseconds: 400),
+        ),
+      );
+    }else if (item['title'] == 'Offres') {
       if (_userId != null) {
         Navigator.push(
           context,
@@ -469,7 +494,9 @@ class _PlusPageState extends State<PlusPage> with TickerProviderStateMixin {
       } else {
         _showModernSnackBar(context, 'Veuillez vous connecter pour continuer');
       }
-    } else if (item['title'] == 'Contacts') {
+    }
+
+    else if (item['title'] == 'Contacts') {
       Navigator.push(
         context,
         PageRouteBuilder(
