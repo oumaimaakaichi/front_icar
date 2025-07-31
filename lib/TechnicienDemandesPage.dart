@@ -747,7 +747,7 @@ class _TechnicienDemandesPageState extends State<DemandesTechnicienPage>
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: Color(0xFF73B1BD),
+        backgroundColor: Colors.blueGrey,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
         centerTitle: true,

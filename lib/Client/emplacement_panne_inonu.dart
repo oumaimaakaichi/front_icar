@@ -7,14 +7,12 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:car_mobile/Client/confirmation_page.dart';
 
 class MaintenanceTypePagee extends StatefulWidget {
-
   final int voitureId;
   final int clientId;
   final String problemDescription;
 
   const MaintenanceTypePagee({
     Key? key,
-
     required this.voitureId,
     required this.clientId,
     required this.problemDescription,
@@ -27,16 +25,25 @@ class MaintenanceTypePagee extends StatefulWidget {
 class _MaintenanceTypePageeState extends State<MaintenanceTypePagee>
     with TickerProviderStateMixin {
   final _storage = const FlutterSecureStorage();
+  final _searchController = TextEditingController();
+  final _scrollController = ScrollController();
+
   bool _isFixed = true;
   dynamic _selectedAtelier;
   DateTime? _selectedDate;
   TimeOfDay? _selectedTime;
   bool _isLoading = false;
+  bool _isLoadingMore = false;
+
   List<dynamic> _ateliers = [];
+  String _searchQuery = '';
+  int _currentPage = 1;
+  int _totalPages = 1;
+  bool _hasMore = true;
+
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
-
 
   @override
   void initState() {
@@ -56,25 +63,64 @@ class _MaintenanceTypePageeState extends State<MaintenanceTypePagee>
       curve: Curves.easeOutCubic,
     ));
     _animationController.forward();
-    _fetchAteliers();
 
+    // Écouter le scroll pour la pagination
+    _scrollController.addListener(_onScroll);
+
+    _fetchAteliers();
   }
 
   @override
   void dispose() {
     _animationController.dispose();
+    _searchController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
-  Future<void> _fetchAteliers() async {
-    setState(() => _isLoading = true);
+  void _onScroll() {
+    if (_scrollController.position.pixels == _scrollController.position.maxScrollExtent) {
+      if (_hasMore && !_isLoadingMore) {
+        _loadMoreAteliers();
+      }
+    }
+  }
+
+  Future<void> _fetchAteliers({bool isNewSearch = false}) async {
+    if (isNewSearch) {
+      setState(() {
+        _isLoading = true;
+        _currentPage = 1;
+        _ateliers.clear();
+      });
+    } else {
+      setState(() => _isLoading = true);
+    }
+
     try {
-      final response = await http.get(
-        Uri.parse('http://localhost:8000/api/ateliers'),
+      final uri = Uri.parse('http://localhost:8000/api/ateliers').replace(
+        queryParameters: {
+          'page': _currentPage.toString(),
+          'per_page': '10',
+          if (_searchQuery.isNotEmpty) 'ville': _searchQuery,
+        },
       );
+
+      final response = await http.get(uri);
+
       if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
         setState(() {
-          _ateliers = jsonDecode(response.body);
+          if (isNewSearch || _currentPage == 1) {
+            _ateliers = data['data'] ?? [];
+          } else {
+            _ateliers.addAll(data['data'] ?? []);
+          }
+
+          _currentPage = data['current_page'] ?? 1;
+          _totalPages = data['last_page'] ?? 1;
+          _hasMore = _currentPage < _totalPages;
           _isLoading = false;
         });
       } else {
@@ -83,6 +129,57 @@ class _MaintenanceTypePageeState extends State<MaintenanceTypePagee>
     } catch (e) {
       setState(() => _isLoading = false);
       _showErrorSnackBar('Erreur de chargement: ${e.toString()}');
+    }
+  }
+
+  Future<void> _loadMoreAteliers() async {
+    if (!_hasMore || _isLoadingMore) return;
+
+    setState(() => _isLoadingMore = true);
+
+    try {
+      _currentPage++;
+      final uri = Uri.parse('http://localhost:8000/api/ateliers').replace(
+        queryParameters: {
+          'page': _currentPage.toString(),
+          'per_page': '10',
+          if (_searchQuery.isNotEmpty) 'ville': _searchQuery,
+        },
+      );
+
+      final response = await http.get(uri);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        setState(() {
+          _ateliers.addAll(data['data'] ?? []);
+          _hasMore = _currentPage < (data['last_page'] ?? 1);
+          _isLoadingMore = false;
+        });
+      } else {
+        _currentPage--; // Revenir à la page précédente en cas d'erreur
+        throw Exception('Failed to load more ateliers');
+      }
+    } catch (e) {
+      setState(() => _isLoadingMore = false);
+      _showErrorSnackBar('Erreur de chargement: ${e.toString()}');
+    }
+  }
+
+  void _onSearchChanged(String value) {
+    if (_searchQuery != value) {
+      setState(() {
+        _searchQuery = value;
+        _selectedAtelier = null; // Réinitialiser la sélection lors d'une nouvelle recherche
+      });
+
+      // Debounce la recherche
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (_searchQuery == value && mounted) {
+          _fetchAteliers(isNewSearch: true);
+        }
+      });
     }
   }
 
@@ -137,7 +234,6 @@ class _MaintenanceTypePageeState extends State<MaintenanceTypePagee>
         body: jsonEncode({
           'voiture_id': widget.voitureId,
           'client_id': clientId,
-
           'description_probleme': widget.problemDescription,
           'type_emplacement': _isFixed ? 'fixe' : 'domicile',
           'atelier_id': _isFixed ? _selectedAtelier['id'] : null,
@@ -179,6 +275,7 @@ class _MaintenanceTypePageeState extends State<MaintenanceTypePagee>
       }
     }
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -228,7 +325,7 @@ class _MaintenanceTypePageeState extends State<MaintenanceTypePagee>
         opacity: _fadeAnimation,
         child: SlideTransition(
           position: _slideAnimation,
-          child: _isLoading
+          child: _isLoading && _ateliers.isEmpty
               ? const Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -240,6 +337,7 @@ class _MaintenanceTypePageeState extends State<MaintenanceTypePagee>
             ),
           )
               : SingleChildScrollView(
+            controller: _scrollController,
             padding: const EdgeInsets.all(24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -304,9 +402,8 @@ class _MaintenanceTypePageeState extends State<MaintenanceTypePagee>
                             context,
                             MaterialPageRoute(
                               builder: (context) => DomicileEmplacementPage(
-
-                                voitureId: widget.voitureId,
-                                clientId: widget.clientId,
+                                  voitureId: widget.voitureId,
+                                  clientId: widget.clientId,
                                   problemDescription: widget.problemDescription
                               ),
                             ),
@@ -319,7 +416,6 @@ class _MaintenanceTypePageeState extends State<MaintenanceTypePagee>
                         ),
                       ),
                     ),
-
                   ],
                 ),
 
@@ -419,6 +515,11 @@ class _MaintenanceTypePageeState extends State<MaintenanceTypePagee>
           ),
         ),
         const SizedBox(height: 16),
+
+        // Barre de recherche
+        _buildSearchBar(),
+        const SizedBox(height: 16),
+
         _buildAtelierList(),
         if (_selectedAtelier != null) ...[
           const SizedBox(height: 32),
@@ -428,10 +529,46 @@ class _MaintenanceTypePageeState extends State<MaintenanceTypePagee>
     );
   }
 
+  Widget _buildSearchBar() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.shade200,
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: TextField(
+        controller: _searchController,
+        onChanged: _onSearchChanged,
+        decoration: InputDecoration(
+          hintText: 'Rechercher par ville...',
+          hintStyle: TextStyle(color: Colors.grey.shade500),
+          prefixIcon: Icon(Icons.search, color: Colors.grey.shade400),
+          suffixIcon: _searchQuery.isNotEmpty
+              ? IconButton(
+            icon: Icon(Icons.clear, color: Colors.grey.shade400),
+            onPressed: () {
+              _searchController.clear();
+              _onSearchChanged('');
+            },
+          )
+              : null,
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        ),
+      ),
+    );
+  }
+
   Widget _buildAtelierList() {
     return Column(
       children: [
-        if (_ateliers.isEmpty)
+        if (_ateliers.isEmpty && !_isLoading)
           Container(
             padding: const EdgeInsets.all(40),
             decoration: BoxDecoration(
@@ -442,7 +579,12 @@ class _MaintenanceTypePageeState extends State<MaintenanceTypePagee>
               children: [
                 Icon(Icons.car_repair, size: 48, color: Colors.grey.shade400),
                 const SizedBox(height: 16),
-                const Text('Aucun atelier disponible'),
+                Text(
+                  _searchQuery.isNotEmpty
+                      ? 'Aucun atelier trouvé pour "$_searchQuery"'
+                      : 'Aucun atelier disponible',
+                  textAlign: TextAlign.center,
+                ),
               ],
             ),
           )
@@ -482,9 +624,33 @@ class _MaintenanceTypePageeState extends State<MaintenanceTypePagee>
                 atelier['nom_commercial'] ?? 'Atelier',
                 style: const TextStyle(fontWeight: FontWeight.w600),
               ),
-              subtitle: Text(
-                atelier['adresse'] ?? '',
-                style: TextStyle(color: Colors.grey.shade600),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (atelier['ville'] != null) ...[
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(Icons.location_city, size: 14, color: Colors.grey.shade600),
+                        const SizedBox(width: 4),
+                        Text(
+                          atelier['ville'],
+                          style: TextStyle(
+                            color: Colors.blue.shade600,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                  if (atelier['adresse'] != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      atelier['adresse'],
+                      style: TextStyle(color: Colors.grey.shade600),
+                    ),
+                  ],
+                ],
               ),
               trailing: _selectedAtelier != null && _selectedAtelier['id'] == atelier['id']
                   ? Container(
@@ -499,6 +665,29 @@ class _MaintenanceTypePageeState extends State<MaintenanceTypePagee>
               onTap: () => setState(() => _selectedAtelier = atelier),
             ),
           )),
+
+        // Indicateur de chargement pour plus d'éléments
+        if (_isLoadingMore)
+          Container(
+            padding: const EdgeInsets.all(16),
+            child: const Center(
+              child: CircularProgressIndicator(),
+            ),
+          ),
+
+        // Indicateur de fin de liste
+        if (!_hasMore && _ateliers.isNotEmpty)
+          Container(
+            padding: const EdgeInsets.all(16),
+            child: Text(
+              'Tous les ateliers ont été chargés',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.grey.shade600,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ),
       ],
     );
   }

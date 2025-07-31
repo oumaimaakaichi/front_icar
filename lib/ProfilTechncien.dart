@@ -449,271 +449,470 @@ class _ProfileTechPageState extends State<ProfileTechPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    const primaryColor = Color(0xFF73B1BD); // Changé vers blueGrey
-    const secondaryColor = Color(0x81B4CBFF); // Bleu clair
+    const primaryColor = Colors.blueGrey;
+    const secondaryColor = Color(0x81B4CBFF);
     const accentColor = Color(0xD585A0FF);
+
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
+        elevation: 0,
         title: const Text(
-          'Profile',
+          'Mon Profil',
           style: TextStyle(
             color: Colors.white,
             fontFamily: 'Roboto',
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
           ),
         ),
-        backgroundColor: Color(0xFF73B1BD),
+        backgroundColor: primaryColor,
         iconTheme: const IconThemeData(color: Colors.white),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit, color: Colors.white),
+            onPressed: () {
+              // Action pour éditer le profil
+            },
+          ),
+        ],
       ),
       drawer: _buildDrawer(theme, primaryColor),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            // Profile Picture
-            Center(
-              child: Stack(
-                children: [
-                  Container(
-                    width: 120,
-                    height: 120,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Color(0xFF007896).withOpacity(0.5),
-                        width: 3,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Color(0xFF007896).withOpacity(0.1),
-                          blurRadius: 10,
-                          spreadRadius: 2,
-                        ),
-                      ],
-                    ),
-                    child: ClipOval(
-                      child: Image.asset(
-                        'assets/images/profile.png',
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    bottom: 0,
-                    right: 0,
-                    child: Container(
-                      width: 35,
-                      height: 35,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Color(0xFF007896),
-                        border: Border.all(
-                          color: Colors.white,
-                          width: 2,
-                        ),
-                      ),
-                      child: const Icon(
-                        Icons.edit,
-                        color: Colors.white,
-                        size: 18,
-                      ),
-                    ),
-                  ),
+      body: Stack(
+        children: [
+          // Background décoratif
+          Container(
+            height: 120,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  primaryColor,
+                  primaryColor.withOpacity(0.7),
+                  Colors.transparent,
                 ],
               ),
             ),
-            const SizedBox(height: 30),
+          ),
 
-            // User Information Cards
-            _buildInfoCard(
-              context,
-              title: 'Informations Personnelles',
-
-              icon: Icons.person,
-
+          SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Column(
               children: [
-                _buildInfoItem(context, 'Nom', _nom ?? '', Icons.person_outline),
-                _buildInfoItem(context, 'Prénom', _prenom ?? '', Icons.person_outlined),
-                _buildInfoItem(context, 'Email', _email ?? '', Icons.email_outlined),
-              ],
-            ),
+                const SizedBox(height: 20),
 
-            const SizedBox(height: 20),
+                // Photo de profil avec effet de profondeur
+                _buildProfileHeader(),
 
-            _buildInfoCard(
-              context,
-              title: 'Statut du Compte',
-              icon: Icons.verified_user,
-              children: [
-                Row(
-                  children: [
-                    Padding(
-                      padding: EdgeInsets.only(left: 10), // marge à gauche
-                      child: Icon(
-                        _isActive ? Icons.verified : Icons.warning,
-                        color: _isActive ? Colors.green : Colors.orange,
-                        size: 20,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Text(
-                      _isActive ? 'Compte vérifié' : 'Compte non vérifié',
-                      style: TextStyle(
-                        color: _isActive ? Colors.green : Colors.orange,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
+                const SizedBox(height: 30),
 
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  _isActive
-                      ? 'Vous bénéficiez de tous les avantages Premium'
-                      : 'Mettez à jour votre compte pour accéder à toutes les fonctionnalités',
-                  style: const TextStyle(
-                    color: Colors.grey,
-                    fontSize: 12,
+                // Carte d'informations personnelles moderne
+                _buildModernInfoCard(
+                  title: 'Informations Personnelles',
+                  icon: Icons.person_outline,
+                  color: primaryColor,
+                  child: Column(
+                    children: [
+                      _buildModernInfoItem('Nom', _nom ?? '', Icons.badge_outlined),
+                      const SizedBox(height: 15),
+                      _buildModernInfoItem('Prénom', _prenom ?? '', Icons.person_outline),
+                      const SizedBox(height: 15),
+                      _buildModernInfoItem('Email', _email ?? '', Icons.email_outlined),
+                    ],
                   ),
                 ),
-                if (!_isActive)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 15),
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Color(0xFF007896),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 12,
-                        ),
-                      ),
-                      onPressed: () {
-                        // Upgrade account logic
-                      },
-                      child: const Text(
-                        'Passer à Premium',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
+
+                const SizedBox(height: 20),
+
+                // Carte de statut avec animation
+
+
+
+                // Carte de statistiques
+                _buildStatsCard(),
+
+                const SizedBox(height: 20),
+
+                // Boutons d'action modernes
+                _buildActionButtons(),
+
+                const SizedBox(height: 30),
               ],
             ),
-
-            const SizedBox(height: 20),
-
-            // Action Buttons
-
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildInfoCard(BuildContext context, {
+  Widget _buildProfileHeader() {
+    return Container(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Stack(
+        children: [
+          Container(
+            width: 140,
+            height: 140,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  const Color(0xFF73B1BD).withOpacity(0.8),
+                  const Color(0xFF73B1BD),
+                ],
+              ),
+              border: Border.all(
+                color: Colors.white,
+                width: 5,
+              ),
+            ),
+            child: ClipOval(
+              child: Image.asset(
+                'assets/images/profile.png',
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 10,
+            right: 10,
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  colors: [
+                    const Color(0xFF007896),
+                    const Color(0xFF73B1BD),
+                  ],
+                ),
+                border: Border.all(
+                  color: Colors.white,
+                  width: 3,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.camera_alt,
+                color: Colors.white,
+                size: 20,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildModernInfoCard({
     required String title,
     required IconData icon,
-    required List<Widget> children,
-    Color backgroundColor = Colors.white,
+    required Color color,
+    required Widget child,
   }) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15),
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
       ),
-      color: backgroundColor, // Ajout de la couleur de fond
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(8),
+                  width: 50,
+                  height: 50,
                   decoration: BoxDecoration(
-                    color: Color(0xFF007896).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(10),
+                    gradient: LinearGradient(
+                      colors: [
+                        color,
+                        color.withOpacity(0.7),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(15),
+                    boxShadow: [
+                      BoxShadow(
+                        color: color.withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
                   child: Icon(
                     icon,
-                    color: Color(0xFF007896),
-                    size: 20,
+                    color: Colors.white,
+                    size: 24,
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 15),
                 Text(
                   title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF007896),
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[800],
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            ...children,
+            const SizedBox(height: 20),
+            child,
           ],
         ),
       ),
     );
   }
 
-  Widget _buildInfoItem(BuildContext context, String label, String value, IconData icon) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          color: Colors.white70,
-          border: Border.all(color: Colors.grey[200]!),
+  Widget _buildModernInfoItem(String label, String value, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(15),
+        color: Colors.grey[50],
+        border: Border.all(
+          color: Colors.grey[200]!,
+          width: 1,
         ),
-        child: ListTile(
-          leading: Container(
+      ),
+      child: Row(
+        children: [
+          Container(
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: Color(0xFF007896).withOpacity(0.1),
+              color: const Color(0xFF73B1BD).withOpacity(0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(
               icon,
-              color: Color(0xFF007896),
+              color: const Color(0xFF73B1BD),
               size: 20,
             ),
           ),
-          title: RichText(
-            text: TextSpan(
-              style: DefaultTextStyle.of(context).style,
+          const SizedBox(width: 15),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                TextSpan(
-                  text: '$label: ',
-                  style: const TextStyle(
-                    color: Colors.black87,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
-                TextSpan(
-                  text: value.isEmpty ? 'Non renseigné' : value,
+                const SizedBox(height: 4),
+                Text(
+                  value.isEmpty ? 'Non renseigné' : value,
                   style: TextStyle(
-                    color: value.isEmpty ? Colors.grey : Colors.blueGrey[800],
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
+                    color: value.isEmpty ? Colors.grey[400] : Colors.grey[800],
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ],
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+
+  Widget _buildStatsCard() {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Statistiques de Performance',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[800],
+              ),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildStatItem('24', 'Interventions\nTotales', Icons.build, Colors.blue),
+                ),
+                Expanded(
+                  child: _buildStatItem('18', 'Terminées\nAvec Succès', Icons.check_circle, Colors.green),
+                ),
+                Expanded(
+                  child: _buildStatItem('4.8', 'Note\nMoyenne', Icons.star, Colors.amber),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
+    );
+  }
+
+  Widget _buildStatItem(String value, String label, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.symmetric(horizontal: 4),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(15),
+        color: color.withOpacity(0.1),
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: color, size: 20),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 11,
+              color: Colors.grey[600],
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButtons() {
+    return Row(
+      children: [
+        Expanded(
+          child: Container(
+            height: 55,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF73B1BD), Color(0xFF007896)],
+              ),
+              borderRadius: BorderRadius.circular(15),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF73B1BD).withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.transparent,
+                shadowColor: Colors.transparent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
+              ),
+              onPressed: () {
+                // Action pour modifier le profil
+              },
+              icon: const Icon(Icons.edit, color: Colors.white),
+              label: const Text(
+                'Modifier',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 15),
+        Expanded(
+          child: Container(
+            height: 55,
+            decoration: BoxDecoration(
+              border: Border.all(color: const Color(0xFF73B1BD), width: 2),
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                shadowColor: Colors.transparent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
+              ),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const SettingsPage()),
+                );
+              },
+              icon: const Icon(Icons.settings, color: Color(0xFF73B1BD)),
+              label: const Text(
+                'Paramètres',
+                style: TextStyle(
+                  color: Color(0xFF73B1BD),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

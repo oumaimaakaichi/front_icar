@@ -1,4 +1,5 @@
 import 'package:car_mobile/DescriptionPannePage.dart';
+import 'package:car_mobile/rapportInconnuPanne.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
@@ -23,13 +24,20 @@ class _DemandeDetailsPageState extends State<DemandeDetailsPageInco> with Ticker
   bool _isLoading = true;
   String? _errorMessage;
   String? _meetLink;
+  String? _meetLinkEntretient;
   int? _idFlux;
+  int? _idFluxEntretirnt;
   bool _isGeneratingLink = false;
+  bool _isGeneratingLinkEntretient = false;
   bool? _ouvertureMeet;
+  bool? _ouvertureMeetEntretient;
   bool? _hasDemandeFlux;
+  bool? _hasDemandeFluxEntretient;
   bool _isSharing = false;
   bool? _partageAvecClient;
+  bool? _partageAvecClientEntretient;
   bool? _EnvoyerAuClient;
+  bool? _EnvoyerAuClientEntretient;
   bool? hasPieces = false;
   bool? hasPanne = false;
   bool? hasCategories = false;
@@ -60,6 +68,7 @@ class _DemandeDetailsPageState extends State<DemandeDetailsPageInco> with Ticker
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fetchDemandeDetails();
       _fetchMeetLink();
+      _fetchMeetLinkEntretient();
     });
   }
 
@@ -169,6 +178,40 @@ class _DemandeDetailsPageState extends State<DemandeDetailsPageInco> with Ticker
     }
   }
 
+  Future<void> _fetchMeetLinkEntretient() async {
+    if (!mounted) return;
+
+    try {
+      print(widget.demandeId);
+      final response = await http.get(
+        Uri.parse('http://localhost:8000/api/flux-par-demande_inconnu-entretient/${widget.demandeId}'),
+        headers: {'Accept': 'application/json'},
+      );
+
+      if (!mounted) return;
+
+      print(response.statusCode);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        print(data['lien_meet']);
+        setState(() {
+          _meetLinkEntretient = data['lien_meet'];
+          _ouvertureMeetEntretient = data['ouvert'];
+          _idFluxEntretirnt = data['id_flux'];
+          _hasDemandeFluxEntretient = data['has_demande_flux'];
+        });
+
+        if (_idFluxEntretirnt != null) {
+          await _fetchPartageStatusEntretient();
+        }
+
+        print(_meetLinkEntretient);
+      }
+    } catch (e) {
+      debugPrint('Error fetching meet link: $e');
+    }
+  }
+
   Future<void> _fetchPartageStatus() async {
     if (!mounted) return;
 
@@ -184,6 +227,27 @@ class _DemandeDetailsPageState extends State<DemandeDetailsPageInco> with Ticker
         setState(() {
           _partageAvecClient = _convertToBool(data['data']['permission']);
           _EnvoyerAuClient = _convertToBool(data['data']['partage_with_client']);
+        });
+      }
+    } catch (e) {
+      debugPrint('Erreur fetchPartageStatus: $e');
+    }
+  }
+  Future<void> _fetchPartageStatusEntretient() async {
+    if (!mounted) return;
+
+    try {
+      final response = await http.get(
+        Uri.parse('http://localhost:8000/api/demande-flux-inconnu/by-flux/$_idFluxEntretirnt'),
+      );
+
+      if (!mounted) return;
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        setState(() {
+          _partageAvecClientEntretient = _convertToBool(data['data']['permission']);
+          _EnvoyerAuClientEntretient = _convertToBool(data['data']['partage_with_client']);
         });
       }
     } catch (e) {
@@ -242,6 +306,61 @@ class _DemandeDetailsPageState extends State<DemandeDetailsPageInco> with Ticker
       if (mounted) {
         setState(() => _isGeneratingLink = false);
         await _fetchMeetLink();
+      }
+    }
+  }
+
+  Future<void> _generateOrOpenMeetLinkEntretient() async {
+    if (_isGeneratingLinkEntretient || !mounted) return;
+
+    if (_meetLinkEntretient != null && _meetLinkEntretient!.isNotEmpty && _ouvertureMeetEntretient != false) {
+      await _launchMeetLink(_meetLinkEntretient!);
+      return;
+    }
+
+    setState(() => _isGeneratingLinkEntretient = true);
+
+    try {
+      final userDataJson = await _storage.read(key: 'user_data');
+      final userId = jsonDecode(userDataJson!)['id'];
+
+      final generatedLink = 'https://meet.jit.si/icar-${widget.demandeId}';
+
+      final response = await http.post(
+        Uri.parse('http://localhost:8000/api/flux-par-demandeInconnu'),
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'demande_id': widget.demandeId,
+          'technicien_id': userId,
+          'lien_meet': generatedLink,
+          'type_meet' : "Entretient"
+        }),
+      );
+
+      if (!mounted) return;
+
+      if (response.statusCode == 201) {
+        final data = jsonDecode(response.body);
+        setState(() {
+          _meetLinkEntretient = data['flux']['lien_meet'];
+          _idFluxEntretirnt = data['flux']['id'];
+          _ouvertureMeetEntretient = true;
+        });
+        await _launchMeetLink(_meetLinkEntretient!);
+      } else {
+        throw Exception('Erreur API: ${response.statusCode} - ${response.body}');
+      }
+    } catch (e) {
+      if (mounted) {
+        _showErrorSnack('Erreur: ${e.toString()}');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isGeneratingLinkEntretient = false);
+        await _fetchMeetLinkEntretient();
       }
     }
   }
@@ -370,6 +489,124 @@ class _DemandeDetailsPageState extends State<DemandeDetailsPageInco> with Ticker
     }
   }
 
+
+
+
+  Future<void> _demanderFluxAvecClientEntrent() async {
+    if (_isGeneratingLinkEntretient || _idFluxEntretirnt == null || !mounted) return;
+
+    setState(() => _isGeneratingLinkEntretient = true);
+
+    try {
+      final response = await http.post(
+        Uri.parse('http://localhost:8000/api/demande-flux-inconnu'),
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'id_flux': _idFluxEntretirnt,
+        }),
+      );
+
+      if (!mounted) return;
+
+      if (response.statusCode == 201) {
+        _showSuccessSnack('Demande de flux envoyée à l\'expert');
+        await _fetchPartageStatus();
+      } else {
+        _showErrorSnack('Échec de la demande: ${response.statusCode}');
+      }
+    } catch (e) {
+      if (mounted) {
+        _showErrorSnack('Erreur: ${e.toString()}');
+      }
+      debugPrint('Erreur détaillée: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _isGeneratingLinkEntretient = false);
+      }
+    }
+  }
+
+  Future<void> _fermerFluxEntretient() async {
+    if (_idFluxEntretirnt == null || !mounted) return;
+
+    setState(() => _isGeneratingLinkEntretient = true);
+
+    try {
+      final response = await http.put(
+        Uri.parse('http://localhost:8000/api/flux-direct-inconnu/$_idFluxEntretirnt/fermer'),
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (!mounted) return;
+
+      if (response.statusCode == 200) {
+        _showSuccessSnack('Flux fermé avec succès');
+        await _fetchMeetLink();
+      } else {
+        _showErrorSnack('Échec de la fermeture du flux');
+      }
+    } catch (e) {
+      if (mounted) {
+        _showErrorSnack('Erreur: ${e.toString()}');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isGeneratingLinkEntretient = false);
+      }
+    }
+  }
+
+  Future<void> _autoriserPartageEntrient() async {
+    if (!mounted) return;
+
+    try {
+      final response = await http.put(
+        Uri.parse('http://localhost:8000/api/demande-flux-inconnu/$_idFluxEntretirnt/autoriser-partage'),
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (!mounted) return;
+
+      if (response.statusCode == 200) {
+        _showSuccessSnack('Demande de partage envoyée au client');
+        await _fetchPartageStatus();
+      } else {
+        _showErrorSnack('Échec de l\'autorisation de partage.');
+      }
+    } catch (e) {
+      if (mounted) {
+        _showErrorSnack('Erreur: ${e.toString()}');
+      }
+    }
+  }
+
+  Future<void> _launchMeetLinkEntrient(String link) async {
+    try {
+      final uri = Uri.parse(link);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri);
+      } else {
+        await Clipboard.setData(ClipboardData(text: link));
+        if (mounted) {
+          _showErrorSnack('Lien copié dans le presse-papier: $link');
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        _showErrorSnack('Impossible d\'ouvrir le lien. Erreur: ${e.toString()}');
+      }
+    }
+  }
+
   void _showSuccessSnack(String message) {
     if (!mounted) return;
 
@@ -419,7 +656,7 @@ class _DemandeDetailsPageState extends State<DemandeDetailsPageInco> with Ticker
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [Color(0xFF667eea), Color(0xFF764ba2)],
+              colors: [Colors.white, Colors.white],
             ),
           ),
           child: const Center(
@@ -438,7 +675,7 @@ class _DemandeDetailsPageState extends State<DemandeDetailsPageInco> with Ticker
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [Color(0xFF667eea), Color(0xFF764ba2)],
+              colors: [Color(0x749DC2B5), Color(0x749DC2B5)],
             ),
           ),
           child: Center(
@@ -466,7 +703,7 @@ class _DemandeDetailsPageState extends State<DemandeDetailsPageInco> with Ticker
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [Color(0xFF667eea), Color(0xFF764ba2)],
+              colors: [Colors.white, Colors.white],
             ),
           ),
           child: const Center(
@@ -588,7 +825,7 @@ class _DemandeDetailsPageState extends State<DemandeDetailsPageInco> with Ticker
                             _buildModernSection(
                               title: 'Informations Client',
                               icon: Icons.person_outline,
-                              color: Color(0xFF73B1BD),
+                              color: Color(0x749DC2B5),
                               children: [
                                 _buildModernInfoTile(
                                   icon: Icons.account_circle,
@@ -681,7 +918,12 @@ class _DemandeDetailsPageState extends State<DemandeDetailsPageInco> with Ticker
                             const SizedBox(height: 20),
                             if (_partageAvecClient == true) _buildDescriptionPanneCard(),
 
-                            const SizedBox(height: 100),
+                            const SizedBox(height: 20),
+                          if(_demande!["pieces_selectionnees"] != null)
+                            _buildVideoConferenceCardEntrient(),
+                            const SizedBox(height: 20),
+                            if (_partageAvecClientEntretient == true) _buildSharingCardEntrient(),
+                            if (_ouvertureMeetEntretient == false) _buildRapport(),
                           ],
                         ),
                       ),
@@ -1021,6 +1263,220 @@ class _DemandeDetailsPageState extends State<DemandeDetailsPageInco> with Ticker
     );
   }
 
+
+  Widget _buildVideoConferenceCardEntrient() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFF667eea).withOpacity(0.1),
+            const Color(0xFF764ba2).withOpacity(0.1),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: const Color(0xFF667eea).withOpacity(0.2),
+          width: 1,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF667eea).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.video_call,
+                    color: Color(0xFF667eea),
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Text(
+                  'Visioconférence Entretient',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF2D3748),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            GestureDetector(
+              onTap: _isGeneratingLinkEntretient
+                  ? null
+                  : () {
+                if (_meetLinkEntretient != null) {
+                  _launchMeetLinkEntrient(_meetLinkEntretient!);
+                } else {
+                  _generateOrOpenMeetLinkEntretient();
+                }
+              },
+              child: Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    colors: _ouvertureMeetEntretient == false
+                        ? [Colors.grey.shade300, Colors.grey.shade400]
+                        : _meetLinkEntretient!= null
+                        ? [const Color(0xFF4CAF50), const Color(0xFF45A049)]
+                        : [const Color(0xFF667eea), const Color(0xFF764ba2)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: (_ouvertureMeetEntretient == false
+                          ? Colors.grey
+                          : _meetLinkEntretient != null
+                          ? const Color(0xFF4CAF50)
+                          : const Color(0xFF667eea))
+                          .withOpacity(0.3),
+                      spreadRadius: 0,
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: _isGeneratingLinkEntretient
+                    ? const CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                )
+                    : Icon(
+                  _ouvertureMeetEntretient == false
+                      ? Icons.videocam_off
+                      : _meetLink != null
+                      ? Icons.videocam
+                      : Icons.videocam_off,
+                  size: 40,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            if (_meetLinkEntretient != null && _ouvertureMeetEntretient != false)
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  _meetLinkEntretient!,
+                  style: const TextStyle(
+                    color: Color(0xFF667eea),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+
+            if (_ouvertureMeetEntretient == false)
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red[50],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  'Flux fermé - Vidéoconférence indisponible',
+                  style: TextStyle(
+                    color: Colors.red[700],
+                    fontSize: 12,
+                    fontStyle: FontStyle.italic,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+
+            const SizedBox(height: 20),
+
+            if (_meetLinkEntretient != null && _hasDemandeFluxEntretient == false && _ouvertureMeetEntretient != false)
+              Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF667eea), Color(0xFF764ba2)],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF667eea).withOpacity(0.3),
+                      spreadRadius: 0,
+                      blurRadius: 15,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: ElevatedButton(
+                  onPressed: _idFluxEntretirnt == null ? null : _demanderFluxAvecClientEntrent,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    shadowColor: Colors.transparent,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: _isGeneratingLinkEntretient
+                      ? const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      ),
+                      SizedBox(width: 12),
+                      Text(
+                        "Envoi en cours...",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  )
+                      : const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.send, size: 20, color: Colors.white),
+                      SizedBox(width: 12),
+                      Text(
+                        "Demander flux avec client",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildSharingCard() {
     return Container(
       decoration: BoxDecoration(
@@ -1190,6 +1646,218 @@ class _DemandeDetailsPageState extends State<DemandeDetailsPageInco> with Ticker
                     ),
                   ),
                   child: _isGeneratingLink
+                      ? const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      ),
+                      SizedBox(width: 12),
+                      Text(
+                        "Fermeture en cours...",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  )
+                      : const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.close, size: 20, color: Colors.white),
+                      SizedBox(width: 12),
+                      Text(
+                        "Fermer le flux",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+  Widget _buildSharingCardEntrient() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFF4CAF50).withOpacity(0.1),
+            const Color(0xFF45A049).withOpacity(0.1),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: const Color(0xFF4CAF50).withOpacity(0.2),
+          width: 1,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF4CAF50).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.share,
+                    color: Color(0xFF4CAF50),
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Text(
+                  'Partage avec client',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF2D3748),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: const Color(0xFF4CAF50).withOpacity(0.2),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF4CAF50).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.share_outlined,
+                      color: Color(0xFF4CAF50),
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Text(
+                      'Partage avec le client',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF2D3748),
+                      ),
+                    ),
+                  ),
+                  Transform.scale(
+                    scale: 0.8,
+                    child: Switch(
+                      value: _EnvoyerAuClientEntretient ?? false,
+                      onChanged: (value) {
+                        if (value) {
+                          _autoriserPartageEntrient();
+                        }
+                      },
+                      activeColor: const Color(0xFF4CAF50),
+                      activeTrackColor: const Color(0xFF4CAF50).withOpacity(0.3),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            if (_EnvoyerAuClientEntretient == false) ...[
+              const SizedBox(height: 16),
+              Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF4CAF50), Color(0xFF45A049)],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF4CAF50).withOpacity(0.3),
+                      spreadRadius: 0,
+                      blurRadius: 15,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: ElevatedButton.icon(
+                  onPressed: _autoriserPartageEntrient,
+                  icon: const Icon(Icons.share, color: Colors.white, size: 20),
+                  label: const Text(
+                    'Partager',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    shadowColor: Colors.transparent,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+
+            if (_ouvertureMeetEntretient != false) ...[
+              const SizedBox(height: 16),
+              Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFE57373), Color(0xFFEF5350)],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFE57373).withOpacity(0.3),
+                      spreadRadius: 0,
+                      blurRadius: 15,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: ElevatedButton(
+                  onPressed: _fermerFluxEntretient,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    shadowColor: Colors.transparent,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: _isGeneratingLinkEntretient
                       ? const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -1495,5 +2163,48 @@ class _DemandeDetailsPageState extends State<DemandeDetailsPageInco> with Ticker
         ),
       ),
     );
+  }Widget _buildRapport() {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Rapport',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 10),
+          ElevatedButton.icon(
+            onPressed: () {
+              if (_demande != null) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => RapportMaintenanceInconnuPage(demande: _demande!),
+                  ),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Aucune demande disponible.')),
+                );
+              }
+            },
+
+            icon: const Icon(Icons.description),
+            label: const Text('Créer le rapport maintenant'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            ),
+          ),
+        ],
+      ),
+    );
   }
+
+
 }

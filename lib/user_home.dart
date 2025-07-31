@@ -1,3 +1,5 @@
+import 'package:car_mobile/Client/notifications_page.dart';
+import 'package:car_mobile/NotificationsPage.dart';
 import 'package:car_mobile/ProfilTechncien.dart';
 import 'package:car_mobile/TechnicienDemandesPage.dart';
 import 'package:car_mobile/TechnicienReviewsPage.dart';
@@ -51,7 +53,7 @@ class _UserHomePageState extends State<UserHomePage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    const primaryColor = Color(0xFF73B1BD); // Changé vers blueGrey
+    const primaryColor = Colors.blueGrey; // Changé vers blueGrey
     const secondaryColor = Color(0x81B4CBFF); // Bleu clair
     const accentColor = Color(0xD585A0FF); // Rose corail
     const backgroundColor = Color(0xFFF5F6FA); // Gris très clair
@@ -74,9 +76,28 @@ class _UserHomePageState extends State<UserHomePage> {
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications_none),
-            onPressed: () {},
+            onPressed: () {
+              if (_userId != null) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => NotificationsPageT(technicienId: _userId!),
+                  ),
+                );
+              } else {
+                // Optionnel : afficher un message d'erreur
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Utilisateur non identifié'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
+
           ),
         ],
+
       ),
       drawer: _buildDrawer(theme, primaryColor),
       body: SingleChildScrollView(

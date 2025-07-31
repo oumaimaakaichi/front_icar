@@ -507,7 +507,7 @@ class _MesDemandesPageState extends State<MesDemandesPage> with TickerProviderSt
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Colors.blue, Colors.blueAccent],
+          colors: [Colors.teal, Colors.teal],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -644,6 +644,7 @@ class _MesDemandesPageState extends State<MesDemandesPage> with TickerProviderSt
     final voiture = demande['voiture'] ?? {};
     final dateCreation = demande['created_at'];
     final hasPiece = demande['has_piece_recommandee'] ?? false;
+
     final typeEmplacement = demande['type_emplacement'];
     final dateMaintenance = demande['date_maintenance'];
     final atelier = demande['atelier'];

@@ -16,12 +16,14 @@ class ProfilePage extends StatefulWidget {
   State<ProfilePage> createState() => _ProfilePageState();
 }
 
-class _ProfilePageState extends State<ProfilePage> {
+class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin {
   final _storage = const FlutterSecureStorage();
   String? _nom = '';
   String? _prenom = '';
   String? _email = '';
   bool _isActive = false;
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
 
   Future<void> _loadUserData() async {
     final userDataJson = await _storage.read(key: 'user_data');
@@ -38,13 +40,31 @@ class _ProfilePageState extends State<ProfilePage> {
       });
     }
   }
+
   final primaryColor = const Color(0xFF6797A2);
   final secondaryColor = const Color(0xFF4CA1A3);
+  final accentColor = const Color(0xFF007896);
+
   @override
   void initState() {
     super.initState();
     _loadUserData();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 1000),
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
+    _animationController.forward();
   }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
   Widget _buildDrawerTile(
       BuildContext context, {
         required IconData icon,
@@ -83,18 +103,29 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
+        elevation: 0,
         title: const Text(
-          'Profile',
+          'Mon Profil',
           style: TextStyle(
             color: Colors.white,
             fontFamily: 'Roboto',
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
           ),
         ),
-        backgroundColor: Color(0xFF6797A2),
+        backgroundColor: primaryColor,
         iconTheme: const IconThemeData(color: Colors.white),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [primaryColor, secondaryColor],
+            ),
+          ),
+        ),
       ),
       drawer: Drawer(
         width: MediaQuery.of(context).size.width * 0.8,
@@ -277,279 +308,506 @@ class _ProfilePageState extends State<ProfilePage> {
           ],
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(10),
-        child: Column(
-          children: [
-            // Profile Picture
-            Center(
-              child: Stack(
-                children: [
-                  Container(
-                    width: 120,
-                    height: 120,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Color(0xFF007896).withOpacity(0.5),
-                        width: 3,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Color(0xFF007896).withOpacity(0.1),
-                          blurRadius: 10,
-                          spreadRadius: 2,
-                        ),
-                      ],
-                    ),
-                    child: ClipOval(
-                      child: Image.asset(
-                        'assets/images/profile.png',
-                        fit: BoxFit.cover,
-                      ),
-                    ),
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          child: Column(
+            children: [
+              // Hero Section with Profile Picture
+              Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [primaryColor.withOpacity(0.1), Colors.transparent],
                   ),
-                  Positioned(
-                    bottom: 0,
-                    right: 0,
-                    child: Container(
-                      width: 35,
-                      height: 35,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Color(0xFF007896),
-                        border: Border.all(
-                          color: Colors.white,
-                          width: 2,
-                        ),
-                      ),
-                      child: const Icon(
-                        Icons.edit,
-                        color: Colors.white,
-                        size: 18,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 10),
-
-            // User Information Cards
-            _buildInfoCard(
-              context,
-              title: 'Informations Personnelles',
-
-              icon: Icons.person,
-
-              children: [
-                _buildInfoItem(context, 'Nom', _nom ?? '', Icons.person_outline),
-                _buildInfoItem(context, 'Prénom', _prenom ?? '', Icons.person_outlined),
-                _buildInfoItem(context, 'Email', _email ?? '', Icons.email_outlined),
-              ],
-            ),
-
-            const SizedBox(height: 10),
-
-            _buildInfoCard(
-              context,
-              title: 'Statut du Compte',
-              icon: Icons.verified_user,
-              children: [
-                Row(
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 30),
+                child: Column(
                   children: [
-                    Padding(
-                      padding: EdgeInsets.only(left: 10), // marge à gauche
-                      child: Icon(
-                        _isActive ? Icons.verified : Icons.warning,
-                        color: _isActive ? Colors.green : Colors.orange,
-                        size: 20,
+                    // Profile Picture with floating animation
+                    Hero(
+                      tag: 'main_profile_image',
+                      child: Container(
+                        width: 140,
+                        height: 140,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: LinearGradient(
+                            colors: [primaryColor, secondaryColor],
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: primaryColor.withOpacity(0.3),
+                              blurRadius: 20,
+                              spreadRadius: 5,
+                              offset: const Offset(0, 10),
+                            ),
+                          ],
+                        ),
+                        padding: const EdgeInsets.all(4),
+                        child: Container(
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white,
+                          ),
+                          padding: const EdgeInsets.all(4),
+                          child: ClipOval(
+                            child: Image.asset(
+                              'assets/images/profile.png',
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
                       ),
                     ),
-                    const SizedBox(width: 10),
+                    const SizedBox(height: 20),
+                    // Name and status
                     Text(
-                      _isActive ? 'Compte vérifié' : 'Compte non vérifié',
+                      '$_prenom $_nom',
                       style: TextStyle(
-                        color: _isActive ? Colors.green : Colors.orange,
+                        fontSize: 28,
                         fontWeight: FontWeight.bold,
+                        color: Colors.grey[800],
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: _isActive
+                              ? [Colors.green.shade400, Colors.green.shade600]
+                              : [Colors.orange.shade400, Colors.orange.shade600],
+                        ),
+                        borderRadius: BorderRadius.circular(25),
+                        boxShadow: [
+                          BoxShadow(
+                            color: (_isActive ? Colors.green : Colors.orange).withOpacity(0.3),
+                            blurRadius: 10,
+                            offset: const Offset(0, 5),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            _isActive ? Icons.verified : Icons.pending,
+                            color: Colors.white,
+                            size: 18,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            _isActive ? 'Compte Vérifié' : 'En Attente',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
+                ),
+              ),
 
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  _isActive
-                      ? 'Vous bénéficiez de tous les avantages Premium'
-                      : 'Mettez à jour votre compte pour accéder à toutes les fonctionnalités',
-                  style: const TextStyle(
-                    color: Colors.grey,
-                    fontSize: 12,
-                  ),
-                ),
-                if (!_isActive)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 15),
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Color(0xFF007896),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 12,
-                        ),
-                      ),
-                      onPressed: () {
-                        // Upgrade account logic
-                      },
-                      child: const Text(
-                        'Passer à Premium',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
+              // Main Content
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    // Personal Information Card
+                    _buildModernCard(
+                      title: 'Informations Personnelles',
+                      icon: Icons.person_outline,
+                      color: primaryColor,
+                      child: Column(
+                        children: [
+                          _buildModernInfoRow('Nom', _nom ?? '', Icons.badge_outlined),
+                          const SizedBox(height: 16),
+                          _buildModernInfoRow('Prénom', _prenom ?? '', Icons.person_outline),
+                          const SizedBox(height: 16),
+                          _buildModernInfoRow('Email', _email ?? '', Icons.email_outlined),
+                        ],
                       ),
                     ),
-                  ),
-              ],
-            ),
 
-            const SizedBox(height: 20),
+                    const SizedBox(height: 20),
 
-            // Action Buttons
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    icon: const Icon(Icons.car_repair
-                        , size: 25),
-                    label: const Text('Voir mes voitures'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Color(0xFF007896),
-                      side: const BorderSide(color: Color(0xFF007896)),
-                      padding: const EdgeInsets.symmetric(vertical: 15),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                    // Account Status Card
+                    _buildModernCard(
+                      title: 'Statut du Compte',
+                      icon: Icons.security_outlined,
+                      color: _isActive ? Colors.green : Colors.orange,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: (_isActive ? Colors.green : Colors.orange).withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Icon(
+                                  _isActive ? Icons.verified_user : Icons.warning_amber,
+                                  color: _isActive ? Colors.green : Colors.orange,
+                                  size: 24,
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      _isActive ? 'Compte Premium Actif' : 'Compte Standard',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: _isActive ? Colors.green : Colors.orange,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      _isActive
+                                          ? 'Profitez de tous nos services premium'
+                                          : 'Passez au premium pour plus d\'avantages',
+                                      style: TextStyle(
+                                        color: Colors.grey[600],
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          if (!_isActive) ...[
+                            const SizedBox(height: 20),
+                            Container(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: primaryColor,
+                                  foregroundColor: Colors.white,
+                                  elevation: 0,
+                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                onPressed: () {
+                                  // Upgrade logic
+                                },
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: const [
+                                    Icon(Icons.upgrade, size: 20),
+                                    SizedBox(width: 8),
+                                    Text(
+                                      'Passer à Premium',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                     ),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const MesVoituresPage()),
-                      );
-                    },
-                  ),
-                ),
-                const SizedBox(width: 10),
 
-              ],
-            ),
-          ],
+                    const SizedBox(height: 30),
+
+                    // Action Buttons
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildActionButton(
+                            icon: Icons.directions_car_outlined,
+                            label: 'Mes Voitures',
+                            color: primaryColor,
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => const MesVoituresPage()),
+                              );
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: _buildActionButton(
+                            icon: Icons.settings_outlined,
+                            label: 'Paramètres',
+                            color: Colors.grey[700]!,
+                            onPressed: () {
+                              // Settings logic
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // Quick Actions Grid
+                    _buildQuickActionsGrid(),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildInfoCard(BuildContext context, {
+  Widget _buildModernCard({
     required String title,
     required IconData icon,
-    required List<Widget> children,
-    Color backgroundColor = Colors.white,
+    required Color color,
+    required Widget child,
   }) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15),
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
       ),
-      color: backgroundColor, // Ajout de la couleur de fond
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [color.withOpacity(0.1), color.withOpacity(0.05)],
+              ),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(20),
+                topRight: Radius.circular(20),
+              ),
+            ),
+            child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Color(0xFF007896).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(10),
+                    color: color.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(
-                    icon,
-                    color: Color(0xFF007896),
-                    size: 20,
-                  ),
+                  child: Icon(icon, color: color, size: 20),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 16),
                 Text(
                   title,
-                  style: const TextStyle(
-                    fontSize: 16,
+                  style: TextStyle(
+                    fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF007896),
+                    color: color,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            ...children,
+          ),
+          // Content
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: child,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildModernInfoRow(String label, String value, IconData icon) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: primaryColor.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, color: primaryColor, size: 18),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                value.isEmpty ? 'Non renseigné' : value,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: value.isEmpty ? Colors.grey[400] : Colors.grey[800],
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionButton({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onPressed,
+  }) {
+    return Container(
+      height: 60,
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.white,
+          foregroundColor: color,
+          elevation: 0,
+          side: BorderSide(color: color.withOpacity(0.3)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+        ),
+        onPressed: onPressed,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 22),
+            const SizedBox(width: 8),
+            Flexible(
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildInfoItem(BuildContext context, String label, String value, IconData icon) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          color: Colors.white70,
-          border: Border.all(color: Colors.grey[200]!),
-        ),
-        child: ListTile(
-          leading: Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: Color(0xFF007896).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(
-              icon,
-              color: Color(0xFF007896),
-              size: 20,
+  Widget _buildQuickActionsGrid() {
+    final actions = [
+      {'icon': Icons.help_outline, 'label': 'Support', 'color': Colors.blue},
+      {'icon': Icons.build_outlined, 'label': 'Pièces', 'color': Colors.green},
+      {'icon': Icons.star_outline, 'label': 'Avis', 'color': Colors.orange},
+      {'icon': Icons.share_outlined, 'label': 'Partager', 'color': Colors.purple},
+    ];
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Actions Rapides',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
             ),
           ),
-          title: RichText(
-            text: TextSpan(
-              style: DefaultTextStyle.of(context).style,
-              children: [
-                TextSpan(
-                  text: '$label: ',
-                  style: const TextStyle(
-                    color: Colors.black87,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                TextSpan(
-                  text: value.isEmpty ? 'Non renseigné' : value,
-                  style: TextStyle(
-                    color: value.isEmpty ? Colors.grey : Colors.blueGrey[800],
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
+          const SizedBox(height: 20),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+              childAspectRatio: 1.5,
             ),
+            itemCount: actions.length,
+            itemBuilder: (context, index) {
+              final action = actions[index];
+              return Container(
+                decoration: BoxDecoration(
+                  color: (action['color'] as Color).withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(15),
+                  border: Border.all(
+                    color: (action['color'] as Color).withOpacity(0.2),
+                  ),
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(15),
+                    onTap: () {
+                      // Action logic
+                    },
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          action['icon'] as IconData,
+                          color: action['color'] as Color,
+                          size: 28,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          action['label'] as String,
+                          style: TextStyle(
+                            color: action['color'] as Color,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
           ),
-        ),
+        ],
       ),
     );
   }
 }
+
+// Painter pour les motifs décoratifs du drawer (gardé inchangé)

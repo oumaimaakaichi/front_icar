@@ -143,7 +143,10 @@ class _SelectionPiecesPageState extends State<SelectionPiecesPage> {
 
       final response = await http.post(
         Uri.parse('http://localhost:8000/api/demandes/${widget.demandeId}/save-selections'),
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*' // Add this header
+        },
         body: jsonEncode({'pieces': piecesToSave}),
       );
 
